@@ -45,11 +45,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final hour = DateTime.now().hour;
     String greeting;
     if (hour < 12) {
-      greeting = 'Bom dia';
+      greeting = 'Bom Dia';
     } else if (hour < 18) {
-      greeting = 'Boa tarde';
+      greeting = 'Boa Tarde';
     } else {
-      greeting = 'Boa noite';
+      greeting = 'Boa Noite';
     }
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -61,7 +61,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               '$greeting',
               style: TextStyle(fontSize: 40, color: theme.primaryColor),
             ),
-            Text(widget.api.nomeColaborador,
+            Text(nomeColaborador,
                 style: TextStyle(fontSize: 35, color: theme.primaryColor))
           ],
         ),

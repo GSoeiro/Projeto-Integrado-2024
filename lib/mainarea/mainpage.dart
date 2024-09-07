@@ -77,8 +77,8 @@ class _MainPageState extends State<MainPage> {
   Future<List<Map<String, dynamic>>>? _postsFuture;
 
 Future<List<Map<String, dynamic>>> loadPosts() async {
-  List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts(widget.api.cidade);
-  print("Posts carregados: $posts"); // Adicione este log para depuração
+  List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts();
+  print("Posts carregados: $posts"); 
   return posts;
 }
 
@@ -87,6 +87,7 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
 void initState() {
   super.initState();
   _initializeData();
+  _onRefresh();
 }
 
 Future<void> _initializeData() async {
@@ -449,127 +450,3 @@ Future<void> _onRefresh() async {
     );
   }
 }
-
-/*class MyImageWidget extends StatelessWidget {
-  final Map<String, dynamic> post;
-
-  MyImageWidget({required this.post});
-
-  @override
-  Widget build(BuildContext context) {
-    return Image.file(File(post['IMAGEM']));
-  }*/
-
-/*class Posts extends StatefulWidget {
-  final ApiService api;
-  final BaseDeDados bd;
-
-
-  Posts({required this.api, required this.bd});
-
-  @override
-  _PostsState createState() => _PostsState();
-}
-
-class _PostsState extends State<Posts> {
-  late Future<List<Map<String, dynamic>>> _postsFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    setState(() {
-      _postsFuture = loadPosts();
-    });
-  }
-
-  Future<List<Map<String, dynamic>>> loadPosts() async {
-    return await widget.bd.mostrarPosts(widget.api.cidade);
-  }
-
-  Future<void> _onRefresh() async {
-    await loadPosts();
-    setState(() {
-    _postsFuture = loadPosts(); 
-  });
-  initState();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final ThemeData theme = Theme.of(context);
-
-    return RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _postsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.connectionState == ConnectionState.done) {
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                children: [
-                  Center(child: Text('Não existem publicações disponíveis')),
-                  SizedBox(height: 200),
-                ],
-              );
-            }
-
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                var post = snapshot.data![index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/publicacoespage',
-                        arguments: post);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.all(10),
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: theme.dividerColor),
-                      borderRadius: BorderRadius.circular(10),
-                      color: theme.cardColor,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post['TITULO'] ?? 'Não existe título',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          '${post['NOMECATEGORIA'] ?? 'Não existe categoria'} - ${post['NOMESUBCATEGORIA'] ?? 'Não existe subcategoria'}',
-                          style: TextStyle(
-                              fontSize: 14, color: theme.disabledColor),
-                        ),
-                        SizedBox(height: 10),
-                        post['IMAGEM'] != 'semimagem'
-                            ? MyImageWidget(post: post)
-                            : SizedBox(height: 10),
-                        SizedBox(height: 10),
-                        Text(
-                          post['TEXTO'] ?? 'Não existe descrição',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            );
-          } else {
-            return Center(child: Text('Nenhum dado disponível.'));
-          }
-        },
-      ),
-    );
-  }
-}*/

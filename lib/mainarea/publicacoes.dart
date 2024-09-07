@@ -304,8 +304,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                       ),
                     ]),
                     SizedBox(height: 10),
-                    Text(post['DATAEVENTO'] ??
-                        'Não foi possível mostrar a data'),
+                    Text(post['evento']?['DATAEVENTO'] ?? 'Não foi possível mostrar a data'),
                     SizedBox(height: 10),
                     post['IMAGEM'] != 'semimagem'
                         ? MyImageWidget(post: post)
@@ -573,20 +572,17 @@ class PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Future<List<dynamic>> downloadOpcoesEVotos(Map<String, dynamic> post) async {
-    List<Map<String, dynamic>> listaopcoes =
-        await widget.api.downloadOpcoesEscolha(post['IDQUESTIONARIO']);
+    List<Map<String, dynamic>> listaopcoes = await widget.api.downloadOpcoesEscolha(post['IDQUESTIONARIO']);
     List<Map<String, dynamic>> listavotos = await widget.api.downloadVotos();
     return [listaopcoes, listavotos];
   }
 
   Future<List<dynamic>> downloadComentariosPublicacoes(
-      Map<String, dynamic> post) async {
-   
+    Map<String, dynamic> post) async {
 
     List<dynamic> listaComentarios;
     try {
-      listaComentarios =
-          await widget.api.downloadComentarios(post['IDPUBLICACAO']);
+      listaComentarios = await widget.api.downloadComentarios(post['IDPUBLICACAO']);
   
     } catch (e) {
       print("Erro ao baixar os comentários: $e");

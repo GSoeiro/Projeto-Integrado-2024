@@ -1,20 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:softshares/backend/localdb.dart';
 import '../backend/apiservice.dart';
 import '../other/translations.dart';
 
 void load(ApiService apiService) async {
   try {
     await apiService.downloadPosts(apiService.cidade);
+    print('Posts Transferidos com sucesso no login.dart');
   } catch (e) {
     print('Erro ao transferir os posts: $e');
   }
 }
-
-/*class GooogleSignInApi{
-  static final _googleSignIn = GoogleSignIn();
-  static Future<GoogleSignInAccount?> login() => _googleSignIn.signIn();
-}*/
 
 class LoginPage extends StatefulWidget {
   final ApiService api;

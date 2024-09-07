@@ -362,7 +362,7 @@ Future<void> downloadPosts(int id) async {
             path = await saveImageToFileSystem(imageBytes, caminho);
           } else {
             print("IMAGEM é nula para o post ID ${post['IDPUBLICACAO']}");  
-            path = await saveImageToFileSystem(imageBytes, caminho); 
+            path ='semimagem'; 
           }
 
           // Montando o mapa de publicações
@@ -384,7 +384,7 @@ Future<void> downloadPosts(int id) async {
             'TITULO': post['TITULO'],
             'TEXTO': post['TEXTO'],
             'RATING': post['RATING'],
-            'IMAGEM': path, // Caminho da imagem (ou 'semimagem')
+            'IMAGEM': path, 
             'IDQUESTIONARIO': post['evento']?['IDQUESTIONARIO'],
             'DATAEVENTO': formatDateTime(post['evento']['DATAEVENTO']),
             'COORDENADAS': post['espaco']?['COORDENADAS'],
@@ -406,8 +406,6 @@ Future<void> downloadPosts(int id) async {
     throw Exception('Erro a transferir os posts: $error');
   }
 }
-
-
 
   Future<void> dowloadEspaco() async {
     try {
@@ -659,7 +657,7 @@ Future<void> downloadPosts(int id) async {
               'IDPOST': comment['IDPOST'],
               'APROVADO': comment['aprovacao']['APROVADA'],
               'IDCOLABORADOR': comment['IDCOLABORADOR'],
-              'NOMECOLABORADOR': comment['colaborador']['NOME'],
+              'NOMECOLABORADOR': comment['colaborador'],
               'DATACOMENTARIO': formatDateTime(comment['DATACOMENTARIO']),
               'AVALIACAO': comment['AVALIACAO'],
               'TEXTO': comment['TEXTO'],
@@ -789,220 +787,260 @@ Future<void> downloadPosts(int id) async {
     }
   }
 
-  Future<void> criarEspaco(String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
-    String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
-    String coordenadas = '';
+Future<void> criarEspaco(String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
+  String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  String coordenadas = '';
 
-    final prefs = await SharedPreferences.getInstance();
-    double? latitude = prefs.getDouble('selected_latitude');
-    double? longitude = prefs.getDouble('selected_longitude');
-    coordenadas = latitude.toString() + ' ' + longitude.toString();
+  final prefs = await SharedPreferences.getInstance();
+  double? latitude = prefs.getDouble('selected_latitude');
+  double? longitude = prefs.getDouble('selected_longitude');
+  coordenadas = latitude.toString() + ' ' + longitude.toString();
 
-    Map<String, dynamic> datapost_espaco = {
-      'COORDENADAS': coordenadas,
-      'WEBSITE': website,
-    };
+  Map<String, dynamic> datapost_espaco = {
+    'COORDENADAS': coordenadas,
+    'WEBSITE': website,
+  };
 
-    try {
-      var responseAprovacao = await http.post(
-        Uri.parse(url + 'aprovacao/create'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({
-          'IDCOLABORADOR': IDCOLABORADOR.toString(),
-          'DATAAPROVACAO': formattedDate,
-          'APROVADA': 0
-        }),
-      );
+  try {
+    // Fazer pedido de aprovação
+    var responseAprovacao = await http.post(
+      Uri.parse(url + 'aprovacao/create'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({
+        'IDCOLABORADOR': IDCOLABORADOR.toString(),
+        'DATAAPROVACAO': formattedDate,
+        'APROVADA': 0
+      }),
+    );
 
-      if (responseAprovacao.statusCode == 200) {
-        var responseDataAprovacao = json.decode(responseAprovacao.body);
+    print('Resposta Aprovacao: ${responseAprovacao.body}'); // Log da resposta de aprovação
 
-        if (responseDataAprovacao['success'] == true) {
-          var responseEspaco = await http.post(
-            Uri.parse(url + 'espaco/create'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode(datapost_espaco),
-          );
+    if (responseAprovacao.statusCode == 200) {
+      var responseDataAprovacao = json.decode(responseAprovacao.body);
 
-          if (responseEspaco.statusCode == 200) {
-            var respondeDataEspaco = json.decode(responseEspaco.body);
-            if (respondeDataEspaco['success'] == true) {
-              var request =
-                  http.MultipartRequest('POST', Uri.parse(url + 'post/create'));
-              request.fields['CIDADE'] = cidade.toString();
-              request.fields['APROVACAO'] =
-                  responseDataAprovacao['data']['IDAPROVACAO'].toString();
-              request.fields['COLABORADOR'] = IDCOLABORADOR.toString();
-              request.fields['CATEGORIA'] = categoria;
-              request.fields['SUBCATEGORIA'] = subcategoria;
-              request.fields['ESPACO'] =
-                  respondeDataEspaco['data']['IDESPACO'].toString();
-              request.fields['EVENTO'] = '1';
-              request.fields['DATAPUBLICACAO'] = formattedDate;
-              request.fields['DATAULTIMAATIVIDADE'] = formattedDate;
-              request.fields['TITULO'] = titulo;
-              request.fields['TEXTO'] = descricao;
-              request.fields['RATING'] = '0';
+      if (responseDataAprovacao['success'] == true) {
+        // Pedido de criação de espaço
+        var responseEspaco = await http.post(
+          Uri.parse(url + 'espaco/create'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode(datapost_espaco),
+        );
 
-              try {
-                if (pathimagem != null) {
-                  request.files.add(http.MultipartFile.fromBytes(
-                      'IMAGEM', pathimagem!,
-                      filename: 'IMAGEM'));
-                }
-              } catch (err) {
-                throw new Exception("Erro a inserir a imagem");
-              }
-              var response = await request.send();
-              var responseData = await response.stream.bytesToString();
-              if (response.statusCode == 200) {
-                var decodedResponse = json.decode(responseData);
-                if (decodedResponse["success"] == true) {
-                  print('Post criado com sucesso');
-                } else {
-                }
+        print('Resposta Espaco: ${responseEspaco.body}'); // Log da resposta do espaço
+
+        if (responseEspaco.statusCode == 200) {
+          var respondeDataEspaco = json.decode(responseEspaco.body);
+          if (respondeDataEspaco['success'] == true) {
+            var request = http.MultipartRequest('POST', Uri.parse(url + 'post/create'));
+            request.fields['CIDADE'] = cidade.toString();
+            request.fields['APROVACAO'] = responseDataAprovacao['data']['IDAPROVACAO'].toString();
+            request.fields['COLABORADOR'] = IDCOLABORADOR.toString();
+            request.fields['CATEGORIA'] = categoria;
+            request.fields['SUBCATEGORIA'] = subcategoria;
+            request.fields['ESPACO'] = respondeDataEspaco['data']['IDESPACO'].toString();
+            request.fields['EVENTO'] = '1';
+            request.fields['DATAPUBLICACAO'] = formattedDate;
+            request.fields['DATAULTIMAATIVIDADE'] = formattedDate;
+            request.fields['TITULO'] = titulo;
+            request.fields['TEXTO'] = descricao;
+            request.fields['RATING'] = '0';
+
+            try {
+              if (pathimagem != null) {
+                request.files.add(http.MultipartFile.fromBytes(
+                  'IMAGEM', pathimagem!,
+                  filename: 'IMAGEM'
+                ));
+                print('Imagem anexada com sucesso');
               } else {
-                print('Erro ao criar post');
+                print('Nenhuma imagem fornecida');
               }
+            } catch (err) {
+              throw Exception("Erro ao inserir a imagem: $err");
             }
+
+            // Enviar o request de criação de post
+            var response = await request.send();
+            var responseData = await response.stream.bytesToString();
+            print('Resposta Post: $responseData'); // Log da resposta do post
+
+            if (response.statusCode == 200) {
+              var decodedResponse = json.decode(responseData);
+              if (decodedResponse["success"] == true) {
+                print('Post criado com sucesso');
+              } else {
+                print('Falha ao criar o post: ${decodedResponse["message"]}');
+              }
+            } else {
+              print('Erro ao criar espaço1. Código de status: ${response.statusCode}');
+            }
+          } else {
+            print('Falha ao criar espaço: ${respondeDataEspaco["message"]}');
           }
         } else {
-          print('Erro a criar a aprovação');
+          print('Erro ao criar o espaço. Código de status: ${responseEspaco.statusCode}');
         }
       } else {
-        print('Erro');
+        print('Falha ao aprovar: ${responseDataAprovacao["message"]}');
       }
-    } catch (error) {
-      print('Erro: $error');
+    } else {
+      print('Erro ao criar a aprovação. Código de status: ${responseAprovacao.statusCode}');
     }
+  } catch (error) {
+    print('Erro: $error');
   }
+}
 
-  Future<void> criarEvento(String titulo, String descricao, String categoria, String subcategoria, Uint8List? pathimagem, List<String> opcoes, String formattedDate) async {
-    String formattedDate = DateFormat('yyyy').format(DateTime.now());
-    try {
-      var responseQuestionario = await http.post(
-        Uri.parse(url + 'questionario/create'),
-        headers: {
-          'Authorization': 'Bearer $token',
-          'Content-Type': 'application/json',
-        },
-        body: json.encode({'NOME': titulo}),
-      );
-      if (responseQuestionario.statusCode == 200) {
-        var responseQuestionarioData = json.decode(responseQuestionario.body);
 
-        if (responseQuestionarioData['success'] == true) {
-          var responseEvento = await http.post(
-            Uri.parse(url + 'evento/create'),
-            headers: {
-              'Authorization': 'Bearer $token',
-              'Content-Type': 'application/json',
-            },
-            body: json.encode({
-              'IDQUESTIONARIO': responseQuestionarioData['data']
-                  ['IDQUESTIONARIO'],
-              'DATAEVENTO': formattedDate,
-              'ESTADO': 1,
-              'DATADOEVENTO': responseQuestionarioData['data']['DATAEVENTO']
-            }),
-          );
-          if (responseEvento.statusCode == 200) {
-            var responseEventoData = json.decode(responseEvento.body);
+    Future<void> criarEvento(String titulo, String descricao, String categoria, String subcategoria, Uint8List? pathimagem, List<String> opcoes, String datavento) async {
+  String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  try {
+    print('Iniciando criação de evento...');
 
-            if (responseEventoData['success'] == true) {
-              for (var opcao in opcoes) {
-                var responseopcao = await http.post(
-                  Uri.parse(url + 'opcoes_escolha/create'),
-                  headers: {
-                    'Authorization': 'Bearer $token',
-                    'Content-Type': 'application/json',
-                  },
-                  body: json.encode({
-                    'NOME': opcao[0],
-                    'TIPOOPCAO': 1,
-                    'IDQUESTIONARIO': responseQuestionarioData['data']
-                        ['IDQUESTIONARIO']
-                  }),
-                );
-                if (responseopcao.statusCode == 200) {
-                  var responseOpcaoData = json.decode(responseopcao.body);
-                }
-              }
+    // Criar questionário
+    var responseQuestionario = await http.post(
+      Uri.parse(url + 'questionario/create'),
+      headers: {
+        'Authorization': 'Bearer $token',
+        'Content-Type': 'application/json',
+      },
+      body: json.encode({'NOME': titulo}),
+    );
+    print('Resposta do questionário: ${responseQuestionario.body}');
+    if (responseQuestionario.statusCode == 200) {
+      var responseQuestionarioData = json.decode(responseQuestionario.body);
 
-              var responseAprovacao = await http.post(
-                Uri.parse(url + 'aprovacao/create'),
+      if (responseQuestionarioData['success'] == true) {
+        print('Questionário criado com sucesso. ID: ${responseQuestionarioData['data']['IDQUESTIONARIO']}');
+
+        // Criar evento
+        var responseEvento = await http.post(
+          Uri.parse(url + 'evento/create'),
+          headers: {
+            'Authorization': 'Bearer $token',
+            'Content-Type': 'application/json',
+          },
+          body: json.encode({
+            'IDQUESTIONARIO': responseQuestionarioData['data']['IDQUESTIONARIO'],
+            'ESTADO': 1,
+            'DATAEVENTO': responseQuestionarioData['data']['DATAEVENTO']
+          }),
+        );
+        print('Resposta do evento: ${responseEvento.body}');
+        if (responseEvento.statusCode == 200) {
+          var responseEventoData = json.decode(responseEvento.body);
+
+          if (responseEventoData['success'] == true) {
+            print('Evento criado com sucesso. ID: ${responseEventoData['data']['IDEVENTO']}');
+
+            // Criar opções
+            for (var opcao in opcoes) {
+              var responseopcao = await http.post(
+                Uri.parse(url + 'opcoes_escolha/create'),
                 headers: {
                   'Authorization': 'Bearer $token',
                   'Content-Type': 'application/json',
                 },
                 body: json.encode({
-                  'IDCOLABORADOR': IDCOLABORADOR.toString(),
-                  'DATAAPROVACAO': formattedDate,
-                  'APROVADA': 0
+                  'NOME': opcao,
+                  'TIPOOPCAO': 1,
+                  'IDQUESTIONARIO': responseQuestionarioData['data']['IDQUESTIONARIO']
                 }),
               );
-              if (responseAprovacao.statusCode == 200) {
-                var responseAprovacaoData = json.decode(responseAprovacao.body);
+              print('Resposta da opção: ${responseopcao.body}');
+              if (responseopcao.statusCode != 200) {
+                print('Erro ao criar opção: ${responseopcao.statusCode}');
+              }
+            }
 
-                if (responseAprovacaoData['success'] == true) {
-                  var request = http.MultipartRequest(
-                      'POST', Uri.parse(url + 'post/create'));
-                  request.fields['CIDADE'] = cidade.toString();
-                  request.fields['APROVACAO'] =
-                      responseAprovacaoData['data']['IDAPROVACAO'].toString();
-                  request.fields['COLABORADOR'] = IDCOLABORADOR.toString();
-                  request.fields['CATEGORIA'] = categoria;
-                  request.fields['SUBCATEGORIA'] = subcategoria;
-                  request.fields['ESPACO'] = '1';
-                  request.fields['EVENTO'] =
-                      responseEventoData['data']['IDEVENTO'].toString();
-                  request.fields['DATAPUBLICACAO'] = formattedDate;
-                  request.fields['DATAULTIMAATIVIDADE'] = formattedDate;
-                  request.fields['TITULO'] = titulo;
-                  request.fields['TEXTO'] = descricao;
-                  request.fields['RATING'] = '0';
-                  try {
-                    if (pathimagem != null) {
-                      request.files.add(http.MultipartFile.fromBytes(
-                          'IMAGEM', pathimagem!,
-                          filename: 'IMAGEM'));
-                    }
-                  } catch (err) {
-                    throw new Exception("Erro a inserir a imagem");
+            // Criar aprovação
+            var responseAprovacao = await http.post(
+              Uri.parse(url + 'aprovacao/create'),
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: json.encode({
+                'IDCOLABORADOR': IDCOLABORADOR.toString(),
+                'DATAAPROVACAO': formattedDate,
+                'APROVADA': 0
+              }),
+            );
+            print('Resposta da aprovação: ${responseAprovacao.body}');
+            if (responseAprovacao.statusCode == 200) {
+              var responseAprovacaoData = json.decode(responseAprovacao.body);
+
+              if (responseAprovacaoData['success'] == true) {
+                print('Aprovação criada com sucesso. ID: ${responseAprovacaoData['data']['IDAPROVACAO']}');
+
+                // Criar publicação
+                var request = http.MultipartRequest('POST', Uri.parse(url + 'post/create'));
+                request.fields['CIDADE'] = cidade.toString();
+                request.fields['APROVACAO'] = responseAprovacaoData['data']['IDAPROVACAO'].toString();
+                request.fields['COLABORADOR'] = IDCOLABORADOR.toString();
+                request.fields['CATEGORIA'] = categoria;
+                request.fields['SUBCATEGORIA'] = subcategoria;
+                request.fields['ESPACO'] = '1';
+                request.fields['EVENTO'] = responseEventoData['data']['IDEVENTO'].toString();
+                request.fields['DATAPUBLICACAO'] = formattedDate;
+                request.fields['DATAULTIMAATIVIDADE'] = formattedDate;
+                request.fields['TITULO'] = titulo;
+                request.fields['TEXTO'] = descricao;
+                request.fields['RATING'] = '0';
+
+                try {
+                  if (pathimagem != null) {
+                    request.files.add(http.MultipartFile.fromBytes(
+                      'IMAGEM', pathimagem,
+                      filename: 'IMAGEM',
+                    ));
                   }
-                  var response = await request.send();
-
-                  var responseData = await response.stream.bytesToString();
-
-                  if (response.statusCode == 200) {
-                    var decodedResponse = json.decode(responseData);
-
-                    if (decodedResponse["success"] == true) {
-                      print('Post criado com sucesso');
-                    } else {
-                      print('Erro ao criar post!');
-                    }
-                  } else {
-                    print('Erro ao criar post!');
-                  }
+                } catch (err) {
+                  print('Erro ao adicionar imagem: $err');
+                  throw new Exception("Erro ao inserir a imagem");
                 }
+
+                var response = await request.send();
+                var responseData = await response.stream.bytesToString();
+                print('Resposta da publicação: $responseData');
+
+                if (response.statusCode == 200) {
+                  var decodedResponse = json.decode(responseData);
+
+                  if (decodedResponse["success"] == true) {
+                    print('Evento criado com sucesso');
+                  } else {
+                    print('Erro ao criar evento!');
+                  }
+                } else {
+                  print('Erro ao criar evento! Código: ${response.statusCode}');
+                }
+              } else {
+                print('Erro ao criar aprovação. Código: ${responseAprovacao.statusCode}');
               }
             } else {
-              print('Erro a criar a aprovação');
+              print('Erro ao criar aprovação. Código: ${responseAprovacao.statusCode}');
             }
           } else {
-            print('Erro');
+            print('Erro ao criar evento! Código: ${responseEvento.statusCode}');
           }
+        } else {
+          print('Erro ao criar evento! Código: ${responseEvento.statusCode}');
         }
+      } else {
+        print('Erro ao criar questionário! Código: ${responseQuestionario.statusCode}');
       }
-    } catch (err) {
-      throw new Exception("Erro a criar a publicação");
+    } else {
+      print('Erro ao criar questionário! Código: ${responseQuestionario.statusCode}');
     }
+  } catch (err) {
+    print('Erro ao criar a publicação: $err');
+    throw new Exception("Erro ao criar a publicação");
   }
+}
 }

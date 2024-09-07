@@ -27,12 +27,12 @@ class BaseDeDados {
     String path = join(await getDatabasesPath(), nomeBD);
 
     // Apaga a db e depois abre novamente (para teste, pelo menos comentar a linha quando for para dar flutter build apk --release)
-    await deleteDatabase(path);
+    //(await deleteDatabase(path));
     return await openDatabase(
       path,
       version: versao,
       onCreate: _onCreate,
-      onUpgrade: _onUpgrade,
+      //onUpgrade: _onUpgrade,
     );
   }
 
@@ -61,7 +61,6 @@ class BaseDeDados {
   }
 
   Future _createTables(Database db) async {
-    await db.execute('DROP TABLE IF EXISTS POST');
     await db.execute('''
     CREATE TABLE COLABORADORLOCAL (
       IDCOLABORADOR INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -445,7 +444,9 @@ class BaseDeDados {
     try {
       Database db = await basededados;
       await db.rawQuery('DELETE FROM POST');
-    } catch (e) {}
+    } catch (e) {
+
+    }
   }
 
   Future<int> insertPost(Map<String, dynamic> post) async {
@@ -463,15 +464,11 @@ class BaseDeDados {
     return await db.insert('POST', post);
   }
 
-  Future<List<Map<String, dynamic>>> mostrarPosts(int idcidade) async {
+  Future<List<Map<String, dynamic>>> mostrarPosts() async {
     try {
       Database db = await basededados;
-      List<Map<String, dynamic>> posts =
-          await db.rawQuery('SELECT * FROM POST');
+      List<Map<String, dynamic>> posts = await db.rawQuery('SELECT * FROM POST');
 
-      for(var post in posts){
-         print(posts);
-      }
       return posts;
     } catch (e) {
       print('Erro ao mostrar os posts: $e');

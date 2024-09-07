@@ -82,13 +82,12 @@ class _EventcreationpageState extends State<Eventcreationpage> {
     String descricao = _descricaoController.text;
     String categoria = _selectedCategoria.toString();
     String subcategoria = _selectedSubCategoria.toString();
-    String formattedDate = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    String dataevento = DateFormat('dd-MM-yyyy').format(_selectedDate!);
 
     // Captura as opções dinâmicas inseridas pelo usuário
     List<String> opcoes = formItems.map((item) => item.content).toList();
 
-    await widget.api.criarEvento(titulo, descricao, categoria, subcategoria,
-        imageBytes, opcoes, formattedDate);
+    await widget.api.criarEvento(titulo, descricao, categoria, subcategoria,imageBytes, opcoes, dataevento);
   }
 
   Widget buildDynamicRow(int index) {
@@ -150,7 +149,6 @@ class _EventcreationpageState extends State<Eventcreationpage> {
   @override
   Widget build(BuildContext context) {
     final screenSize = MediaQuery.of(context).size;
-
     return Scaffold(
         appBar: AppBar(
           iconTheme:
@@ -280,7 +278,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
                   child: Padding(
                     padding: const EdgeInsets.only(right: 8.0),
                     child: Text(
-                      Translations.translate(context, 'category'),
+                      Translations.translate(context, 'description'),
                       style: TextStyle(fontSize: 18),
                       maxLines: 1,
                     ),

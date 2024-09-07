@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:softshares/backend/apiservice.dart';
 import 'package:softshares/backend/localdb.dart';
 import 'package:table_calendar/table_calendar.dart';
-import 'package:intl/intl.dart'; // Adicione o intl para lidar com formatação de data
+import 'package:intl/intl.dart';
 
 class CalendarPage extends StatefulWidget {
   final ApiService api;
@@ -23,7 +23,7 @@ class _CalendarPageState extends State<CalendarPage> {
 
   // Função para buscar eventos e formatar as datas corretamente
   Future<void> buscarEventos() async {
-    List<Map<String, dynamic>> post = await widget.bd.mostrarPosts(widget.api.cidade);
+    List<Map<String, dynamic>> post = await widget.bd.mostrarPosts();
     List<Map<String, dynamic>> postsFinal = [];
 
     for (var pub in post) {
@@ -40,9 +40,9 @@ class _CalendarPageState extends State<CalendarPage> {
       DateTime eventoData;
       if (dataEvento is String) {
         try {
-          eventoData = DateTime.parse(dataEvento); // Primeiro tenta como ISO8601
+          eventoData = DateTime.parse(dataEvento);
+          print(eventoData);
         } catch (e) {
-          // Tenta outro formato, adaptando ao formato específico
           try {
             eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento);
           } catch (e) {
@@ -94,11 +94,8 @@ class _CalendarPageState extends State<CalendarPage> {
             setState(() {
               _selectedDay = selectedDay;
               _focusedDay = focusedDay;
-
               if (_events.containsKey(selectedDay)) {
-                Navigator.push(
-                  context,
-                  MaterialPageRoute(
+                Navigator.push(context,MaterialPageRoute(
                     builder: (context) => EventPage(events: _events[selectedDay]!),
                   ),
                 );
