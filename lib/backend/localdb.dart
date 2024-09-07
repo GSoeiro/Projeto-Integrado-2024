@@ -9,9 +9,6 @@ class BaseDeDados {
   static Database? _basededados;
   static const String url = 'https://pint-backend-8vxk.onrender.com/';
 
-  /*String formatDateTime(DateTime dateTime) {
-    return dateTime.toIso8601String(); // Converts to ISO 8601 string format
-  }*/
 
   String formatDateTime(String? dateTimeString) {
     if (dateTimeString == null) return '';
@@ -31,7 +28,6 @@ class BaseDeDados {
 
     // Apaga a db e depois abre novamente (para teste, pelo menos comentar a linha quando for para dar flutter build apk --release)
     await deleteDatabase(path);
-
     return await openDatabase(
       path,
       version: versao,
@@ -188,8 +184,9 @@ class BaseDeDados {
     CREATE TABLE EVENTO (
       IDEVENTO INTEGER NOT NULL,
       IDQUESTIONARIO INTEGER NOT NULL,
-      DATAEVENTO DATETIME NULL,
-      ESTADO INTEGER NOT NULL
+      DATAEVENTO TEXT NULL,
+      ESTADO INTEGER NOT NULL,
+      PRECO REAL NULL
     )
   ''');
   }
@@ -472,6 +469,9 @@ class BaseDeDados {
       List<Map<String, dynamic>> posts =
           await db.rawQuery('SELECT * FROM POST');
 
+      for(var post in posts){
+         print(posts);
+      }
       return posts;
     } catch (e) {
       print('Erro ao mostrar os posts: $e');

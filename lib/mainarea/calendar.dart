@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:softshares/backend/apiservice.dart';
 import 'package:softshares/backend/localdb.dart';
 import 'package:table_calendar/table_calendar.dart';
+import 'package:intl/intl.dart'; // Adicione o intl para lidar com formatação de data
 
 class CalendarPage extends StatefulWidget {
   final ApiService api;
   final BaseDeDados bd;
 
   CalendarPage({super.key, required this.api, required this.bd});
+
   @override
   _CalendarPageState createState() => _CalendarPageState();
 }
@@ -17,13 +19,11 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
-  Map<DateTime, List<Map<String, dynamic>>> _events =
-      {}; // Armazenar eventos por data
+  Map<DateTime, List<Map<String, dynamic>>> _events = {};
 
-  // Função para buscar eventos e mapear para datas
+  // Função para buscar eventos e formatar as datas corretamente
   Future<void> buscarEventos() async {
-    List<Map<String, dynamic>> post =
-        await widget.bd.mostrarPosts(widget.api.cidade);
+    List<Map<String, dynamic>> post = await widget.bd.mostrarPosts(widget.api.cidade);
     List<Map<String, dynamic>> postsFinal = [];
 
     for (var pub in post) {
@@ -34,22 +34,33 @@ class _CalendarPageState extends State<CalendarPage> {
 
     Map<DateTime, List<Map<String, dynamic>>> eventosPorData = {};
 
-    // Iterar sobre os posts e organizar no mapa de eventos
     for (var evento in postsFinal) {
-      print(evento);
       var dataEvento = evento['DATAEVENTO'];
-      print(evento['DATAEVENTO']); // Aqui assumimos que já é um DateTime
 
-      if (dataEvento is DateTime) {
-        if (eventosPorData[dataEvento] == null) {
-          eventosPorData[dataEvento] = [];
+      DateTime eventoData;
+      if (dataEvento is String) {
+        try {
+          eventoData = DateTime.parse(dataEvento); // Primeiro tenta como ISO8601
+        } catch (e) {
+          // Tenta outro formato, adaptando ao formato específico
+          try {
+            eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento);
+          } catch (e) {
+            print('Erro ao converter DATAEVENTO para DateTime: $e');
+            continue;
+          }
         }
-
-        eventosPorData[dataEvento]!.add(evento);
+      } else if (dataEvento is DateTime) {
+        eventoData = dataEvento;
       } else {
         print('Tipo de dado inválido para DATAEVENTO: $dataEvento');
-        continue; // Pule este evento se o tipo de dado for inválido
+        continue;
       }
+
+      if (!eventosPorData.containsKey(eventoData)) {
+        eventosPorData[eventoData] = [];
+      }
+      eventosPorData[eventoData]!.add(evento);
     }
 
     setState(() {
@@ -83,6 +94,15 @@ class _CalendarPageState extends State<CalendarPage> {
             setState(() {
               _selectedDay = selectedDay;
               _focusedDay = focusedDay;
+
+              if (_events.containsKey(selectedDay)) {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => EventPage(events: _events[selectedDay]!),
+                  ),
+                );
+              }
             });
           },
           onFormatChanged: (format) {
@@ -93,10 +113,29 @@ class _CalendarPageState extends State<CalendarPage> {
           onPageChanged: (focusedDay) {
             _focusedDay = focusedDay;
           },
-          // Função para carregar eventos para um dia específico
           eventLoader: (day) {
-            return _events[day] ?? [];
+            // Usa só o "day" sem horas para comparar datas corretamente
+            return _events[DateTime(day.year, day.month, day.day)] ?? [];
           },
+          calendarBuilders: CalendarBuilders(
+            markerBuilder: (context, date, events) {
+              if (events.isNotEmpty) {
+                return Align(
+                  alignment: Alignment.bottomCenter,
+                  child: Container(
+                    width: 5.0,
+                    height: 5.0,
+                    margin: const EdgeInsets.symmetric(horizontal: 1.5),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                );
+              }
+              return null;
+            },
+          ),
           calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
               color: Colors.blue,
@@ -113,6 +152,31 @@ class _CalendarPageState extends State<CalendarPage> {
             formatButtonShowsNext: false,
           ),
         ),
+      ),
+    );
+  }
+}
+
+class EventPage extends StatelessWidget {
+  final List<Map<String, dynamic>> events;
+
+  EventPage({required this.events});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('Eventos'),
+      ),
+      body: ListView.builder(
+        itemCount: events.length,
+        itemBuilder: (context, index) {
+          final event = events[index];
+          return ListTile(
+            title: Text(event['TITLE'] ?? 'Evento sem título'),
+            subtitle: Text(event['DESCRIPTION'] ?? 'Sem descrição'),
+          );
+        },
       ),
     );
   }

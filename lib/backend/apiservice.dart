@@ -148,7 +148,7 @@ class ApiService {
         } else {
           return 0;
         }
-      } else {
+      } else {  
         return 0;
       }
     } catch (error) {
@@ -241,7 +241,6 @@ class ApiService {
               'DESCRICAO': categoria['DESCRICAO']
             };
 
-            // Check if the category already exists
             Database db = await bd.basededados;
             var existingCategoria = await db.query(
               'CATEGORIA',
@@ -253,10 +252,8 @@ class ApiService {
             await prefs.setInt('IDCATEGORIA', idcategoria);
 
             if (existingCategoria.isEmpty) {
-              // If the category doesn't exist, insert it
               await bd.insertCategoria(categorias);
             } else {
-              // If it does exist, update the existing record
               await db.update(
                 'CATEGORIA',
                 categorias,
@@ -330,8 +327,7 @@ class ApiService {
     }
   }
 
-  Future<String> saveImageToFileSystem(
-      Uint8List imageData, String imageName) async {
+  Future<String> saveImageToFileSystem(Uint8List imageData, String imageName) async {
     final directory = await getApplicationDocumentsDirectory();
     final path = '${directory.path}/$imageName';
     final file = File(path);
@@ -339,76 +335,79 @@ class ApiService {
     return path;
   }
 
-  Future<void> downloadPosts(int id) async {
-    try {
-      var response = await http.get(
-        Uri.parse(url + 'post/listBlob/$id'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
+Future<void> downloadPosts(int id) async {
+  try {
+    var response = await http.get(
+      Uri.parse(url + 'post/listBlob/$id'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    );
 
-      if (response.statusCode == 200) {
-        var responseData = json.decode(response.body);
-        if (responseData["success"] == true) {
-          await bd.apagarPosts();
+    if (response.statusCode == 200) {
+      var responseData = json.decode(response.body);
 
-          for (var post in responseData['data']) {
-            List<int> imageData;
-            Uint8List imageBytes;
+      if (responseData["success"] == true) {
+        await bd.apagarPosts();
 
-            String caminho =
-                '${post['COLABORADOR']}post${post['IDPUBLICACAO']}';
-            String? path;
-            if (post['IMAGEM'] != null) {
-              imageData = List<int>.from(post['IMAGEM']['data']);
-              imageBytes = Uint8List.fromList(imageData);
-              path = await saveImageToFileSystem(imageBytes, caminho);
-            } else {
-              imageData = [];
-              imageBytes = Uint8List(0);
-              path = 'semimagem';
-            }
-            Map<String, dynamic> publicacoes = {
-              'IDPUBLICACAO': post['IDPUBLICACAO'],
-              'CIDADE': post['CIDADE'],
-              'NOMECIDADE': post['cidade']['NOME'],
-              'APROVACAO': post['APROVACAO'],
-              'COLABORADOR': post['COLABORADOR'],
-              'NOMECOLABORADOR': post['colaborador']['NOME'],
-              'CATEGORIA': post['CATEGORIA'],
-              'NOMECATEGORIA': post['categorium']['NOME'],
-              'SUBCATEGORIA': post['SUBCATEGORIA'],
-              'NOMESUBCATEGORIA': post['subcategorium']['NOME'],
-              'ESPACO': post['ESPACO'],
-              'EVENTO': post['EVENTO'],
-              'DATAPUBLICACAO': formatDateTime(post['DATAPUBLICACAO']),
-              'DATAULTIMAATIVIDADE':
-                  formatDateTime(post['DATAULTIMAATIVIDADE']),
-              'TITULO': post['TITULO'],
-              'TEXTO': post['TEXTO'],
-              'RATING': post['RATING'],
-              'IMAGEM': path,
-              'IDQUESTIONARIO': post['evento']['IDQUESTIONARIO'],
-              'DATAEVENTO': formatDateTime(post['DATAEVENTO']),
-              'COORDENADAS': post['espaco']['COORDENADAS'],
-              'WEBSITE': post['espaco']['WEBSITE'],
-              'VIEWS': post['VIEWS'],
-            };
-            if (post['CIDADE'] == cidade && post['aprovacao']['APROVADA'] == 1) {
-              await bd.insertPost(publicacoes);
-            }
+        for (var post in responseData['data']) {
+          List<int> imageData = [];
+          Uint8List imageBytes = Uint8List(0);
+          String caminho = '${post['COLABORADOR']}post${post['IDPUBLICACAO']}';
+          String path;
+
+          if (post['IMAGEM'] != null && post['IMAGEM']['data'] != null) {
+            imageData = List<int>.from(post['IMAGEM']['data']);
+            imageBytes = Uint8List.fromList(imageData);
+            path = await saveImageToFileSystem(imageBytes, caminho);
+          } else {
+            print("IMAGEM é nula para o post ID ${post['IDPUBLICACAO']}");  
+            path = await saveImageToFileSystem(imageBytes, caminho); 
           }
-        } else {
-          throw Exception('Erro ao carregar os posts');
+
+          // Montando o mapa de publicações
+          Map<String, dynamic> publicacoes = {
+            'IDPUBLICACAO': post['IDPUBLICACAO'],
+            'CIDADE': post['CIDADE'],
+            'NOMECIDADE': post['cidade']['NOME'],
+            'APROVACAO': post['APROVACAO'],
+            'COLABORADOR': post['COLABORADOR'],
+            'NOMECOLABORADOR': post['colaborador']['NOME'],
+            'CATEGORIA': post['CATEGORIA'],
+            'NOMECATEGORIA': post['categorium']['NOME'],
+            'SUBCATEGORIA': post['SUBCATEGORIA'],
+            'NOMESUBCATEGORIA': post['subcategorium']['NOME'],
+            'ESPACO': post['ESPACO'],
+            'EVENTO': post['EVENTO'],
+            'DATAPUBLICACAO': formatDateTime(post['DATAPUBLICACAO']),
+            'DATAULTIMAATIVIDADE': formatDateTime(post['DATAULTIMAATIVIDADE']),
+            'TITULO': post['TITULO'],
+            'TEXTO': post['TEXTO'],
+            'RATING': post['RATING'],
+            'IMAGEM': path, // Caminho da imagem (ou 'semimagem')
+            'IDQUESTIONARIO': post['evento']?['IDQUESTIONARIO'],
+            'DATAEVENTO': formatDateTime(post['evento']['DATAEVENTO']),
+            'COORDENADAS': post['espaco']?['COORDENADAS'],
+            'WEBSITE': post['espaco']?['WEBSITE'],
+            'VIEWS': post['VIEWS'],
+          };
+
+          if (post['CIDADE'] == cidade && post['aprovacao']['APROVADA'] == 1) {
+            await bd.insertPost(publicacoes);
+          }
         }
       } else {
-        throw Exception('Erro: ${response.statusCode}');
+        throw Exception('Erro ao carregar os posts');
       }
-    } catch (error) {
-      throw Exception('Erro a transferir os posts: $error');
+    } else {
+      throw Exception('Erro: ${response.statusCode}');
     }
+  } catch (error) {
+    throw Exception('Erro a transferir os posts: $error');
   }
+}
+
+
 
   Future<void> dowloadEspaco() async {
     try {
@@ -463,6 +462,7 @@ class ApiService {
               'IDQUESTIONARIO': event['IDQUESTIONARIO'],
               'DATAEVENTO': formatDateTime(event['DATAEVENTO']),
               'ESTADO': event['ESTADO'],
+              'PRECO': event['PRECO']
             };
             bd.insertEvento(event);
           });
@@ -789,8 +789,7 @@ class ApiService {
     }
   }
 
-  Future<void> criarEspaco(String titulo, String descricao, String website,
-      String categoria, String subcategoria, Uint8List? pathimagem) async {
+  Future<void> criarEspaco(String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
     String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     String coordenadas = '';
 
@@ -867,7 +866,6 @@ class ApiService {
                 if (decodedResponse["success"] == true) {
                   print('Post criado com sucesso');
                 } else {
-                  print('Erro ao criar post post');
                 }
               } else {
                 print('Erro ao criar post');
@@ -885,15 +883,8 @@ class ApiService {
     }
   }
 
-  Future<void> criarEvento(
-      String titulo,
-      String descricao,
-      String categoria,
-      String subcategoria,
-      Uint8List? pathimagem,
-      List<String> opcoes,
-      String formattedDate) async {
-    String formattedDate = DateFormat('-yyyy').format(DateTime.now());
+  Future<void> criarEvento(String titulo, String descricao, String categoria, String subcategoria, Uint8List? pathimagem, List<String> opcoes, String formattedDate) async {
+    String formattedDate = DateFormat('yyyy').format(DateTime.now());
     try {
       var responseQuestionario = await http.post(
         Uri.parse(url + 'questionario/create'),

@@ -58,7 +58,6 @@ class _SettingsPageState extends State<SettingsPage> {
 
   void _logout() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('isLoggedIn');
     await prefs.remove('cidade');
     await prefs.remove('nomeColaborador');
     await prefs.remove('rememberMe');

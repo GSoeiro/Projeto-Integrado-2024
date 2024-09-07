@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:softshares/backend/apiservice.dart';
 
 class BeginPage extends StatefulWidget {
-  BeginPage({Key? key, required void Function() onThemeToggle})
+  final ApiService api;
+
+  BeginPage({Key? key, required void Function() onThemeToggle, required this.api})
       : super(key: key);
 
   @override
@@ -10,11 +14,27 @@ class BeginPage extends StatefulWidget {
 }
 
 class BeginPageState extends State<BeginPage> {
+  bool rememberMe = false;
+
   @override
   void initState() {
     super.initState();
+    _checkRememberMe();
+  }
+
+  Future<void> _checkRememberMe() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    bool? savedRememberMe = prefs.getBool('rememberMe');
+    
+    setState(() {
+      rememberMe = savedRememberMe ?? false;
+    });
     Timer(const Duration(seconds: 2), () {
-      Navigator.pushReplacementNamed(context, '/loginpage');
+      if (rememberMe) {
+        Navigator.pushReplacementNamed(context, '/welcomescreen');
+      } else {
+        Navigator.pushReplacementNamed(context, '/loginpage');
+      }
     });
   }
 

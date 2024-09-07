@@ -134,7 +134,7 @@ class _MyAppState extends State<MyApp> {
               GlobalCupertinoLocalizations.delegate,
             ],
             locale: localeProvider.locale,
-            home: BeginPage(onThemeToggle: _toggleTheme),
+            home: BeginPage(onThemeToggle: _toggleTheme, api: widget.apiService,),
             routes: {
               '/recoverpassword': (context) =>
                   RecoverPage(api: widget.apiService),

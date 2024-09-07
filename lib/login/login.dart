@@ -36,6 +36,7 @@ class _LoginPageState extends State<LoginPage> {
   bool passwordValida = false;
 
   void initState() {
+    super.initState();
     setState(() {
       _checkLoginStatus();
     });
@@ -131,15 +132,17 @@ class _LoginPageState extends State<LoginPage> {
 
   void _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? isLoggedIn = prefs.getBool('isLoggedIn');
+    bool? rememberme = prefs.getBool('rememberMe');
     int? cidade = prefs.getInt('cidade');
 
-    if (isLoggedIn == true && cidade != null) {
+    if (rememberme == true && cidade != null) {
       try {
+        print("Erro antes de transferir posts");
         await widget.api.downloadPosts(cidade);
+        print("Posts transferidos com sucesso com lembrarme");
 
         if (mounted) {
-          Navigator.pushReplacementNamed(context, '/mainpage');
+          Navigator.pushReplacementNamed(context, '/welcomescreen');
         }
       } catch (e) {
         print('Erro ao transferir os posts: $e');
@@ -167,11 +170,6 @@ class _LoginPageState extends State<LoginPage> {
     final Color hintColor =
         theme.brightness == Brightness.dark ? Colors.white54 : Colors.black54;
 
-    /*Future signIn() async {
-  await GooogleSignInApi.login();
-  Navigator.pushReplacementNamed(context, '/mainpage');
-  await GooogleSignInApi.login();
-}*/
 
     return Scaffold(
       backgroundColor: backgroundColor,
@@ -397,8 +395,7 @@ class _LoginPageState extends State<LoginPage> {
 
   _login() async {
     try {
-      int IDColaborador = await widget.api
-          .loginUserOnBackend(emailController.text, passwordController.text);
+      int IDColaborador = await widget.api.loginUserOnBackend(emailController.text, passwordController.text);
 
       if (IDColaborador != 0) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -411,7 +408,7 @@ class _LoginPageState extends State<LoginPage> {
           await prefs.setBool('rememberMe', rememberMe);
 
           if (rememberMe) {
-            await prefs.setBool('isLoggedIn', true);
+            await prefs.setBool('rememberMe', true);
           } else {
             await prefs.remove('isLoggedIn');
           }

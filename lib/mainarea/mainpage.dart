@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:softshares/backend/localdb.dart';
 import 'package:softshares/mainarea/calendar.dart';
 import 'package:softshares/other/translations.dart';
@@ -53,6 +53,12 @@ void load(ApiService apiService) async {
   }
 }
 
+
+Future<bool> getRememberMe() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('rememberMe') ?? false; 
+}
+
 //-------------------------------------Classe MainPage---------------------------------------//
 
 class MainPage extends StatefulWidget {
@@ -68,27 +74,36 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
-    late Future<List<Map<String, dynamic>>> _postsFuture;
+  Future<List<Map<String, dynamic>>>? _postsFuture;
 
-  @override
-  void initState() {
-    super.initState();
-    setState(() {
-      _postsFuture = loadPosts();
-    });
-  }
+Future<List<Map<String, dynamic>>> loadPosts() async {
+  List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts(widget.api.cidade);
+  print("Posts carregados: $posts"); // Adicione este log para depuração
+  return posts;
+}
 
-  Future<List<Map<String, dynamic>>> loadPosts() async {
-    return await widget.bd.mostrarPosts(widget.api.cidade);
-  }
 
-  Future<void> _onRefresh() async {
-    await loadPosts();
-    setState(() {
+@override
+void initState() {
+  super.initState();
+  _initializeData();
+}
+
+Future<void> _initializeData() async {
+  bool rememberMe = await getRememberMe();
+  print("Valor de rememberMe: $rememberMe");
+  load(widget.api);
+  setState(() {
     _postsFuture = loadPosts(); 
   });
-  initState();
-  }
+}
+
+Future<void> _onRefresh() async {
+  load(widget.api);
+  setState(() {
+    _postsFuture = loadPosts(); 
+  });
+}
 
 
   @override
@@ -96,8 +111,6 @@ class _MainPageState extends State<MainPage> {
     _scrollController.dispose();
     super.dispose();
   }
-
-  
 
 //-------------------------------------Função do ícone '+'---------------------------------------//
 
@@ -344,6 +357,7 @@ class _MainPageState extends State<MainPage> {
           } else if (snapshot.hasError) {
             return Center(child: Text('Error: ${snapshot.error}'));
           } else if (snapshot.connectionState == ConnectionState.done) {
+            print(snapshot);
             if (!snapshot.hasData || snapshot.data!.isEmpty) {
               return ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -387,7 +401,7 @@ class _MainPageState extends State<MainPage> {
                         ),
                         SizedBox(height: 10),
                         post['IMAGEM'] != 'semimagem'
-                            ? MyImageWidget(post: post)
+                            ? Image.file(File(post['IMAGEM']))
                             : SizedBox(height: 10),
                         SizedBox(height: 10),
                         Text(
@@ -436,7 +450,7 @@ class _MainPageState extends State<MainPage> {
   }
 }
 
-class MyImageWidget extends StatelessWidget {
+/*class MyImageWidget extends StatelessWidget {
   final Map<String, dynamic> post;
 
   MyImageWidget({required this.post});
@@ -444,8 +458,7 @@ class MyImageWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Image.file(File(post['IMAGEM']));
-  }
-}
+  }*/
 
 /*class Posts extends StatefulWidget {
   final ApiService api;
