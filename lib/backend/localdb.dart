@@ -476,12 +476,33 @@ class BaseDeDados {
     }
   }
 
-    Future<List<Map<String, dynamic>>> mostrarPostsBySubcategoria(int subcategoriaId) async {
+    /*Future<List<Map<String, dynamic>>> mostrarPostsBySubcategoria(int subcategoriaId) async {
       Database db = await basededados;
     final query = 'SELECT * FROM POST WHERE SUBCATEGORIA = ?';
     final result = await db.rawQuery(query, [subcategoriaId]);
     return result;
+  }*/
+
+  Future<List<Map<String, dynamic>>> mostrarPostsBySubcategorias(List<int> subcategoriaIds) async {
+  Database db = await basededados;
+  
+  // Verifica se a lista de subcategorias está vazia
+  if (subcategoriaIds.isEmpty) {
+    return []; // Retorna uma lista vazia se nenhuma subcategoria for selecionada
   }
+
+  // Constrói a string da cláusula IN usando os IDs das subcategorias
+  String placeholders = List.filled(subcategoriaIds.length, '?').join(', ');
+
+  // Consulta SQL para buscar posts cujas subcategorias estejam na lista
+  final query = 'SELECT * FROM POST WHERE SUBCATEGORIA IN ($placeholders)';
+
+  // Executa a consulta passando os IDs das subcategorias
+  final result = await db.rawQuery(query, subcategoriaIds);
+
+  return result;
+}
+
 
 
   Future<void> apagarComentarios() async {

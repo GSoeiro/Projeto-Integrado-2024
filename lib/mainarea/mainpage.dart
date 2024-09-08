@@ -9,11 +9,13 @@ import '/mainarea/eventcreationpage.dart';
 import '/mainarea/spacecreationpage.dart';
 import '../backend/apiservice.dart';
 
+//-----------------------Classe Drawer-------------------------------//
+
 class CustomDrawer extends StatefulWidget {
   final BaseDeDados bd;
-  final ValueChanged<int?> onSubcategoriaSelected;
+  final ValueChanged<List<int>> onSubcategoriasSelected;
 
-  CustomDrawer({required this.bd, required this.onSubcategoriaSelected});
+  CustomDrawer({required this.bd, required this.onSubcategoriasSelected});
 
   @override
   _CustomDrawerState createState() => _CustomDrawerState();
@@ -22,6 +24,8 @@ class CustomDrawer extends StatefulWidget {
 class _CustomDrawerState extends State<CustomDrawer> {
   late Future<List<Map<String, dynamic>>> _categorias;
   late Map<int, Future<List<Map<String, dynamic>>>> _subcategorias;
+  List<int> _selectedSubcategorias = [];
+  List<int> _selectedCategorias = [];
 
   @override
   void initState() {
@@ -36,15 +40,60 @@ class _CustomDrawerState extends State<CustomDrawer> {
     });
   }
 
+  void _onCategoriaChanged(bool selected, int categoriaId) async {
+    if (selected) {
+      // Adiciona a categoria à lista de categorias selecionadas
+      _selectedCategorias.add(categoriaId);
+
+      // Carrega todas as subcategorias da categoria selecionada e adiciona-as automaticamente
+      List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
+      for (var subcategoria in subcategorias) {
+        int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
+        if (!_selectedSubcategorias.contains(subcategoriaId)) {
+          _selectedSubcategorias.add(subcategoriaId);
+        }
+      }
+    } else {
+      // Remove a categoria da lista de categorias selecionadas
+      _selectedCategorias.remove(categoriaId);
+
+      // Remove as subcategorias relacionadas a essa categoria
+      List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
+      for (var subcategoria in subcategorias) {
+        int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
+        _selectedSubcategorias.remove(subcategoriaId);
+      }
+    }
+
+    _applyFilters();
+  }
+
+  void _onSubcategoriaChanged(bool selected, int subcategoriaId) {
+    setState(() {
+      if (selected) {
+        _selectedSubcategorias.add(subcategoriaId);
+      } else {
+        _selectedSubcategorias.remove(subcategoriaId);
+      }
+    });
+    _applyFilters();
+  }
+
+  void _applyFilters() {
+    widget.onSubcategoriasSelected(_selectedSubcategorias);
+  }
+
   @override
   Widget build(BuildContext context) {
     return Drawer(
       child: Column(
         children: <Widget>[
           DrawerHeader(
-            child: Text('Filtros'),
-            decoration: BoxDecoration(
+              decoration: BoxDecoration(
               color: Colors.blue,
+            ),
+            child: Center(
+              child: Text('Filtros'),
             ),
           ),
           FutureBuilder<List<Map<String, dynamic>>>(
@@ -62,7 +111,17 @@ class _CustomDrawerState extends State<CustomDrawer> {
                     children: snapshot.data!.map((categoria) {
                       int categoriaId = categoria['IDCATEGORIA'];
                       return ExpansionTile(
-                        title: Text(categoria['NOME']),
+                        title: Row(
+                          children: [
+                            Checkbox(
+                              value: _selectedCategorias.contains(categoriaId),
+                              onChanged: (bool? value) {
+                                _onCategoriaChanged(value!, categoriaId);
+                              },
+                            ),
+                            Text(categoria['NOME']),
+                          ],
+                        ),
                         onExpansionChanged: (expanded) {
                           if (expanded) {
                             _updateSubcategorias(categoriaId);
@@ -81,12 +140,15 @@ class _CustomDrawerState extends State<CustomDrawer> {
                               } else {
                                 return Column(
                                   children: snapshot.data!.map((subcategoria) {
+                                    int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
                                     return ListTile(
+                                      leading: Checkbox(
+                                        value: _selectedSubcategorias.contains(subcategoriaId),
+                                        onChanged: (bool? value) {
+                                          _onSubcategoriaChanged(value!, subcategoriaId);
+                                        },
+                                      ),
                                       title: Text(subcategoria['NOME']),
-                                      onTap: () {
-                                        widget.onSubcategoriaSelected(subcategoria['IDSUBCATEGORIA']);
-                                        Navigator.pop(context); // Fecha o Drawer
-                                      },
                                     );
                                   }).toList(),
                                 );
@@ -108,6 +170,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
 }
 
 
+//---------------------- Carregar dados da API ----------------------//
 
 void load(ApiService apiService) async {
   try {
@@ -174,26 +237,20 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
   Future<List<Map<String, dynamic>>>? _postsFuture;
-    int? _selectedSubcategoria;
+  List<int> _selectedSubcategorias = [];
 
-     Future<List<Map<String, dynamic>>> loadPosts() async {
+  Future<List<Map<String, dynamic>>> loadPosts() async {
     List<Map<String, dynamic>> posts;
-    
-    if (_selectedSubcategoria == null) {
-      posts = await widget.bd.mostrarPosts();
+
+    if (_selectedSubcategorias.isEmpty) {
+      posts = await widget.bd.mostrarPosts(); 
     } else {
-      posts = await widget.bd.mostrarPostsBySubcategoria(_selectedSubcategoria!);
+      posts = await widget.bd.mostrarPostsBySubcategorias(_selectedSubcategorias);
     }
-    
+
     print("Posts carregados: $posts");
     return posts;
   }
-
-  /*Future<List<Map<String, dynamic>>> loadPosts() async {
-    List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts();
-    print("Posts carregados: $posts");
-    return posts;
-  }*/
 
   @override
   void initState() {
@@ -224,7 +281,7 @@ class _MainPageState extends State<MainPage> {
     super.dispose();
   }
 
-//-------------------------------------Função do ícone '+'---------------------------------------//
+  //-------------------------------------Função do ícone '+'---------------------------------------//
 
   void _showOptionsButton() {
     showModalBottomSheet(
@@ -275,35 +332,25 @@ class _MainPageState extends State<MainPage> {
                         BoxShadow(
                           color: theme.shadowColor.withOpacity(0.5),
                           spreadRadius: 2,
-                          blurRadius: 7,
-                          offset: const Offset(0, 3),
+                          blurRadius: 8,
+                          offset: Offset(2, 4),
                         ),
                       ],
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 8.0),
-                        Text(
-                          Translations.translate(context, 'create_event'),
-                          style: TextStyle(fontSize: 16.0, color: Colors.white),
-                        ),
-                      ],
+                    child: Icon(
+                      Icons.event,
+                      color: theme.canvasColor,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12.0),
+                SizedBox(height: 16.0),
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            Spacecreationpage(
-                          api: widget.api,
-                          bd: widget.bd,
-                        ),
+                            Spacecreationpage(api: widget.api, bd: widget.bd),
                         transitionsBuilder:
                             (context, animation, secondaryAnimation, child) {
                           var begin = Offset(0.0, 1.0);
@@ -330,79 +377,18 @@ class _MainPageState extends State<MainPage> {
                         BoxShadow(
                           color: theme.shadowColor.withOpacity(0.5),
                           spreadRadius: 2,
-                          blurRadius: 7,
-                          offset: const Offset(0, 3),
+                          blurRadius: 8,
+                          offset: Offset(2, 4),
                         ),
                       ],
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 8.0),
-                        Text(
-                          Translations.translate(context, 'create_space'),
-                          style: TextStyle(fontSize: 16.0, color: Colors.white),
-                        ),
-                      ],
+                    child: Icon(
+                      Icons.store,
+                      color: theme.canvasColor,
                     ),
                   ),
                 ),
-                const SizedBox(height: 12.0),
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      PageRouteBuilder(
-                        pageBuilder: (context, animation, secondaryAnimation) =>
-                            CalendarPage(
-                          api: widget.api,
-                          bd: widget.bd,
-                        ),
-                        transitionsBuilder:
-                            (context, animation, secondaryAnimation, child) {
-                          var begin = Offset(0.0, 1.0);
-                          var end = Offset.zero;
-                          var curve = Curves.ease;
-
-                          var tween = Tween(begin: begin, end: end)
-                              .chain(CurveTween(curve: curve));
-
-                          return SlideTransition(
-                            position: animation.drive(tween),
-                            child: child,
-                          );
-                        },
-                      ),
-                    );
-                  },
-                  child: Container(
-                    padding: const EdgeInsets.all(12.0),
-                    decoration: BoxDecoration(
-                      color: theme.primaryColor,
-                      borderRadius: BorderRadius.circular(8.0),
-                      boxShadow: [
-                        BoxShadow(
-                          color: theme.shadowColor.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 7,
-                          offset: const Offset(0, 3),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(Icons.add, color: Colors.white),
-                        SizedBox(width: 8.0),
-                        Text(
-                          Translations.translate(context, 'calendar'),
-                          style: TextStyle(fontSize: 16.0, color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
+                SizedBox(height: 16.0),
               ],
             ),
           ),
@@ -411,9 +397,9 @@ class _MainPageState extends State<MainPage> {
     );
   }
 
-  //-------------------------------------Início do corpo da página---------------------------------------//
+  //---------------------------------Construção da interface principal---------------------------------//
 
-  @override
+   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
@@ -459,7 +445,16 @@ class _MainPageState extends State<MainPage> {
           ],
         ),
       ),
-      body: RefreshIndicator(
+      drawer: CustomDrawer(
+        bd: widget.bd,
+        onSubcategoriasSelected: (List<int> subcategoriasSelecionadas) {
+          setState(() {
+            _selectedSubcategorias = subcategoriasSelecionadas; // Agora é uma lista
+            _postsFuture = loadPosts(); // Recarrega os posts com base nas subcategorias selecionadas
+          });
+        },
+      ),
+       body: RefreshIndicator(
         onRefresh: _onRefresh,
         child: FutureBuilder<List<Map<String, dynamic>>>(
           future: _postsFuture,
@@ -532,20 +527,12 @@ class _MainPageState extends State<MainPage> {
           },
         ),
       ),
-        drawer: CustomDrawer(
-        bd: widget.bd,
-        onSubcategoriaSelected: (int? subcategoriaId) {
-          setState(() {
-            _selectedSubcategoria = subcategoriaId;
-            _postsFuture = loadPosts(); // Recarrega os posts com o novo filtro
-          });
-        },
-      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showOptionsButton,
         backgroundColor: theme.primaryColor,
-        child: const Icon(Icons.add),
+        child: Icon(Icons.add),
       ),
     );
   }
 }
+
