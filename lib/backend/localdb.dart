@@ -476,6 +476,14 @@ class BaseDeDados {
     }
   }
 
+    Future<List<Map<String, dynamic>>> mostrarPostsBySubcategoria(int subcategoriaId) async {
+      Database db = await basededados;
+    final query = 'SELECT * FROM POST WHERE SUBCATEGORIA = ?';
+    final result = await db.rawQuery(query, [subcategoriaId]);
+    return result;
+  }
+
+
   Future<void> apagarComentarios() async {
     try {
       Database db = await basededados;

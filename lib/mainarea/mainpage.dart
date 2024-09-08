@@ -9,6 +9,106 @@ import '/mainarea/eventcreationpage.dart';
 import '/mainarea/spacecreationpage.dart';
 import '../backend/apiservice.dart';
 
+class CustomDrawer extends StatefulWidget {
+  final BaseDeDados bd;
+  final ValueChanged<int?> onSubcategoriaSelected;
+
+  CustomDrawer({required this.bd, required this.onSubcategoriaSelected});
+
+  @override
+  _CustomDrawerState createState() => _CustomDrawerState();
+}
+
+class _CustomDrawerState extends State<CustomDrawer> {
+  late Future<List<Map<String, dynamic>>> _categorias;
+  late Map<int, Future<List<Map<String, dynamic>>>> _subcategorias;
+
+  @override
+  void initState() {
+    super.initState();
+    _categorias = widget.bd.mostrarCategorias();
+    _subcategorias = {};
+  }
+
+  void _updateSubcategorias(int categoriaId) async {
+    setState(() {
+      _subcategorias[categoriaId] = widget.bd.mostrarSubCategorias(categoriaId);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Drawer(
+      child: Column(
+        children: <Widget>[
+          DrawerHeader(
+            child: Text('Filtros'),
+            decoration: BoxDecoration(
+              color: Colors.blue,
+            ),
+          ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _categorias,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Erro ao carregar categorias');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text('Sem categorias disponíveis');
+              } else {
+                return Expanded(
+                  child: ListView(
+                    children: snapshot.data!.map((categoria) {
+                      int categoriaId = categoria['IDCATEGORIA'];
+                      return ExpansionTile(
+                        title: Text(categoria['NOME']),
+                        onExpansionChanged: (expanded) {
+                          if (expanded) {
+                            _updateSubcategorias(categoriaId);
+                          }
+                        },
+                        children: <Widget>[
+                          FutureBuilder<List<Map<String, dynamic>>>(
+                            future: _subcategorias[categoriaId],
+                            builder: (context, snapshot) {
+                              if (snapshot.connectionState == ConnectionState.waiting) {
+                                return CircularProgressIndicator();
+                              } else if (snapshot.hasError) {
+                                return Text('Erro ao carregar subcategorias');
+                              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                                return Text('Sem subcategorias disponíveis');
+                              } else {
+                                return Column(
+                                  children: snapshot.data!.map((subcategoria) {
+                                    return ListTile(
+                                      title: Text(subcategoria['NOME']),
+                                      onTap: () {
+                                        widget.onSubcategoriaSelected(subcategoria['IDSUBCATEGORIA']);
+                                        Navigator.pop(context); // Fecha o Drawer
+                                      },
+                                    );
+                                  }).toList(),
+                                );
+                              }
+                            },
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                );
+              }
+            },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+
 void load(ApiService apiService) async {
   try {
     await apiService.downloadPosts(apiService.cidade);
@@ -53,10 +153,9 @@ void load(ApiService apiService) async {
   }
 }
 
-
 Future<bool> getRememberMe() async {
   SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getBool('rememberMe') ?? false; 
+  return prefs.getBool('rememberMe') ?? false;
 }
 
 //-------------------------------------Classe MainPage---------------------------------------//
@@ -75,37 +174,49 @@ class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
   Future<List<Map<String, dynamic>>>? _postsFuture;
+    int? _selectedSubcategoria;
 
-Future<List<Map<String, dynamic>>> loadPosts() async {
-  List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts();
-  print("Posts carregados: $posts"); 
-  return posts;
-}
+     Future<List<Map<String, dynamic>>> loadPosts() async {
+    List<Map<String, dynamic>> posts;
+    
+    if (_selectedSubcategoria == null) {
+      posts = await widget.bd.mostrarPosts();
+    } else {
+      posts = await widget.bd.mostrarPostsBySubcategoria(_selectedSubcategoria!);
+    }
+    
+    print("Posts carregados: $posts");
+    return posts;
+  }
 
+  /*Future<List<Map<String, dynamic>>> loadPosts() async {
+    List<Map<String, dynamic>> posts = await widget.bd.mostrarPosts();
+    print("Posts carregados: $posts");
+    return posts;
+  }*/
 
-@override
-void initState() {
-  super.initState();
-  _initializeData();
-  _onRefresh();
-}
+  @override
+  void initState() {
+    super.initState();
+    _initializeData();
+    _onRefresh();
+  }
 
-Future<void> _initializeData() async {
-  bool rememberMe = await getRememberMe();
-  print("Valor de rememberMe: $rememberMe");
-  load(widget.api);
-  setState(() {
-    _postsFuture = loadPosts(); 
-  });
-}
+  Future<void> _initializeData() async {
+    bool rememberMe = await getRememberMe();
+    print("Valor de rememberMe: $rememberMe");
+    load(widget.api);
+    setState(() {
+      _postsFuture = loadPosts();
+    });
+  }
 
-Future<void> _onRefresh() async {
-  load(widget.api);
-  setState(() {
-    _postsFuture = loadPosts(); 
-  });
-}
-
+  Future<void> _onRefresh() async {
+    load(widget.api);
+    setState(() {
+      _postsFuture = loadPosts();
+    });
+  }
 
   @override
   void dispose() {
@@ -349,98 +460,86 @@ Future<void> _onRefresh() async {
         ),
       ),
       body: RefreshIndicator(
-      onRefresh: _onRefresh,
-      child: FutureBuilder<List<Map<String, dynamic>>>(
-        future: _postsFuture,
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return Center(child: CircularProgressIndicator());
-          } else if (snapshot.hasError) {
-            return Center(child: Text('Error: ${snapshot.error}'));
-          } else if (snapshot.connectionState == ConnectionState.done) {
-            print(snapshot);
-            if (!snapshot.hasData || snapshot.data!.isEmpty) {
-              return ListView(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                children: [
-                  Center(child: Text('Não existem publicações disponíveis')),
-                  SizedBox(height: 200),
-                ],
-              );
-            }
-            return ListView.builder(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
-              itemCount: snapshot.data!.length,
-              itemBuilder: (context, index) {
-                var post = snapshot.data![index];
-                return GestureDetector(
-                  onTap: () {
-                    Navigator.pushNamed(context, '/publicacoespage',
-                        arguments: post);
-                  },
-                  child: Container(
-                    margin: EdgeInsets.all(10),
-                    padding: EdgeInsets.all(10),
-                    decoration: BoxDecoration(
-                      border: Border.all(color: theme.dividerColor),
-                      borderRadius: BorderRadius.circular(10),
-                      color: theme.cardColor,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          post['TITULO'] ?? 'Não existe título',
-                          style: TextStyle(
-                              fontSize: 18, fontWeight: FontWeight.bold),
-                        ),
-                        SizedBox(height: 5),
-                        Text(
-                          '${post['NOMECATEGORIA'] ?? 'Não existe categoria'} - ${post['NOMESUBCATEGORIA'] ?? 'Não existe subcategoria'}',
-                          style: TextStyle(
-                              fontSize: 14, color: theme.disabledColor),
-                        ),
-                        SizedBox(height: 10),
-                        post['IMAGEM'] != 'semimagem'
-                            ? Image.file(File(post['IMAGEM']))
-                            : SizedBox(height: 10),
-                        SizedBox(height: 10),
-                        Text(
-                          post['TEXTO'] ?? 'Não existe descrição',
-                          style: TextStyle(fontSize: 16),
-                        ),
-                      ],
-                    ),
-                  ),
+        onRefresh: _onRefresh,
+        child: FutureBuilder<List<Map<String, dynamic>>>(
+          future: _postsFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Center(child: CircularProgressIndicator());
+            } else if (snapshot.hasError) {
+              return Center(child: Text('Error: ${snapshot.error}'));
+            } else if (snapshot.connectionState == ConnectionState.done) {
+              print(snapshot);
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  children: [
+                    Center(child: Text('Não existem publicações disponíveis')),
+                    SizedBox(height: 200),
+                  ],
                 );
-              },
-            );
-          } else {
-            return Center(child: Text('Nenhum dado disponível.'));
-          }
-        },
-      ),
-    ),
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            DrawerHeader(
-              decoration: BoxDecoration(
-                color: theme.primaryColor,
-              ),
-              child: Center(
-                child: Text(
-                  Translations.translate(context, 'filters'),
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24.0,
-                  ),
-                ),
-              ),
-            ),
-          ],
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                itemCount: snapshot.data!.length,
+                itemBuilder: (context, index) {
+                  var post = snapshot.data![index];
+                  return GestureDetector(
+                    onTap: () {
+                      Navigator.pushNamed(context, '/publicacoespage',
+                          arguments: post);
+                    },
+                    child: Container(
+                      margin: EdgeInsets.all(10),
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: theme.dividerColor),
+                        borderRadius: BorderRadius.circular(10),
+                        color: theme.cardColor,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            post['TITULO'] ?? 'Não existe título',
+                            style: TextStyle(
+                                fontSize: 18, fontWeight: FontWeight.bold),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            '${post['NOMECATEGORIA'] ?? 'Não existe categoria'} - ${post['NOMESUBCATEGORIA'] ?? 'Não existe subcategoria'}',
+                            style: TextStyle(
+                                fontSize: 14, color: theme.disabledColor),
+                          ),
+                          SizedBox(height: 10),
+                          post['IMAGEM'] != 'semimagem'
+                              ? Image.file(File(post['IMAGEM']))
+                              : SizedBox(height: 10),
+                          SizedBox(height: 10),
+                          Text(
+                            post['TEXTO'] ?? 'Não existe descrição',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              );
+            } else {
+              return Center(child: Text('Nenhum dado disponível.'));
+            }
+          },
         ),
+      ),
+        drawer: CustomDrawer(
+        bd: widget.bd,
+        onSubcategoriaSelected: (int? subcategoriaId) {
+          setState(() {
+            _selectedSubcategoria = subcategoriaId;
+            _postsFuture = loadPosts(); // Recarrega os posts com o novo filtro
+          });
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showOptionsButton,
