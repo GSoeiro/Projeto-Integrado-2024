@@ -9,13 +9,69 @@ import '/mainarea/eventcreationpage.dart';
 import '/mainarea/spacecreationpage.dart';
 import '../backend/apiservice.dart';
 
+//---------------------- Carregar dados da API ----------------------//
+
+void loadBackend(ApiService apiService) async {
+  try {
+    await apiService.downloadPostsCidade(apiService.cidade);
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir os posts: $e');
+  }
+
+  try {
+    await apiService.downloadCategorias();
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir as categorias: $e');
+  }
+
+  try {
+    await apiService.downloadSubCategorias();
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir os posts: $e');
+  }
+
+  try {
+    await apiService.downloadCidades();
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir os posts: $e');
+  }
+
+  try {
+    await apiService.dowloadEspaco();
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir os espaços: $e');
+  }
+
+  try {
+    await apiService.downloadEventos();
+  } catch (e) {
+    print("Erro no main.dart");
+    print('Erro ao transferir os eventos: $e');
+  }
+}
+
+/*Future<bool> getRememberMe() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  return prefs.getBool('rememberMe') ?? false;
+}*/
+
 //-----------------------Classe Drawer-------------------------------//
 
 class CustomDrawer extends StatefulWidget {
   final BaseDeDados bd;
   final ValueChanged<List<int>> onSubcategoriasSelected;
+  final ValueChanged<List<int>> onCitiesSelected;
 
-  CustomDrawer({required this.bd, required this.onSubcategoriasSelected});
+  CustomDrawer({
+    required this.bd,
+    required this.onSubcategoriasSelected,
+    required this.onCitiesSelected,
+  });
 
   @override
   _CustomDrawerState createState() => _CustomDrawerState();
@@ -23,14 +79,17 @@ class CustomDrawer extends StatefulWidget {
 
 class _CustomDrawerState extends State<CustomDrawer> {
   late Future<List<Map<String, dynamic>>> _categorias;
+  late Future<List<Map<String, dynamic>>> _cidades;
   late Map<int, Future<List<Map<String, dynamic>>>> _subcategorias;
   List<int> _selectedSubcategorias = [];
   List<int> _selectedCategorias = [];
+  List<int> _selectedCities = [];
 
   @override
   void initState() {
     super.initState();
     _categorias = widget.bd.mostrarCategorias();
+    _cidades = widget.bd.mostrarCidades();
     _subcategorias = {};
   }
 
@@ -42,10 +101,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
 
   void _onCategoriaChanged(bool selected, int categoriaId) async {
     if (selected) {
-      // Adiciona a categoria à lista de categorias selecionadas
       _selectedCategorias.add(categoriaId);
-
-      // Carrega todas as subcategorias da categoria selecionada e adiciona-as automaticamente
       List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
       for (var subcategoria in subcategorias) {
         int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
@@ -54,17 +110,13 @@ class _CustomDrawerState extends State<CustomDrawer> {
         }
       }
     } else {
-      // Remove a categoria da lista de categorias selecionadas
       _selectedCategorias.remove(categoriaId);
-
-      // Remove as subcategorias relacionadas a essa categoria
       List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
       for (var subcategoria in subcategorias) {
         int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
         _selectedSubcategorias.remove(subcategoriaId);
       }
     }
-
     _applyFilters();
   }
 
@@ -79,8 +131,22 @@ class _CustomDrawerState extends State<CustomDrawer> {
     _applyFilters();
   }
 
+  void _onCityChanged(bool selected, int cidadeId) {
+    setState(() {
+      if (selected) {
+        if (!_selectedCities.contains(cidadeId)) {
+          _selectedCities.add(cidadeId);
+        }
+      } else {
+        _selectedCities.remove(cidadeId);
+      }
+    });
+    _applyFilters();
+  }
+
   void _applyFilters() {
     widget.onSubcategoriasSelected(_selectedSubcategorias);
+    widget.onCitiesSelected(_selectedCities);
   }
 
   @override
@@ -88,13 +154,16 @@ class _CustomDrawerState extends State<CustomDrawer> {
     return Drawer(
       child: Column(
         children: <Widget>[
-          DrawerHeader(
-              decoration: BoxDecoration(
+          SizedBox(
+            height: 150,
+            child: DrawerHeader(
+            decoration: BoxDecoration(
               color: Colors.blue,
             ),
             child: Center(
-              child: Text('Filtros'),
+              child: Text('Filtros', style: TextStyle(fontSize: 25)),
             ),
+          ),
           ),
           FutureBuilder<List<Map<String, dynamic>>>(
             future: _categorias,
@@ -163,6 +232,36 @@ class _CustomDrawerState extends State<CustomDrawer> {
               }
             },
           ),
+          FutureBuilder<List<Map<String, dynamic>>>(
+            future: _cidades,
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return CircularProgressIndicator();
+              } else if (snapshot.hasError) {
+                return Text('Erro ao carregar cidades');
+              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                return Text('Sem cidades disponíveis');
+              } else {
+                return Expanded(
+                  child: ListView(
+                    shrinkWrap: true,
+                    children: snapshot.data!.map((cidade) {
+                      int cidadeId = cidade['IDCIDADE'];
+                      return ListTile(
+                        title: Text(cidade['NOME']),
+                        leading: Checkbox(
+                          value: _selectedCities.contains(cidadeId),
+                          onChanged: (bool? value) {
+                            _onCityChanged(value!, cidadeId);
+                          },
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                );
+              }
+            },
+          ),
         ],
       ),
     );
@@ -170,56 +269,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
 }
 
 
-//---------------------- Carregar dados da API ----------------------//
 
-void load(ApiService apiService) async {
-  try {
-    await apiService.downloadPosts(apiService.cidade);
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir os posts: $e');
-  }
 
-  try {
-    await apiService.downloadCategorias();
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir as categorias: $e');
-  }
 
-  try {
-    await apiService.downloadSubCategorias();
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir os posts: $e');
-  }
-
-  try {
-    await apiService.downloadCidades();
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir os posts: $e');
-  }
-
-  try {
-    await apiService.dowloadEspaco();
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir os espaços: $e');
-  }
-
-  try {
-    await apiService.downloadEventos();
-  } catch (e) {
-    print("Erro no main.dart");
-    print('Erro ao transferir os eventos: $e');
-  }
-}
-
-Future<bool> getRememberMe() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getBool('rememberMe') ?? false;
-}
 
 //-------------------------------------Classe MainPage---------------------------------------//
 
@@ -238,38 +290,42 @@ class _MainPageState extends State<MainPage> {
   final ScrollController _scrollController = ScrollController();
   Future<List<Map<String, dynamic>>>? _postsFuture;
   List<int> _selectedSubcategorias = [];
+  List<int> _selectedCities = [];
 
-  Future<List<Map<String, dynamic>>> loadPosts() async {
-    List<Map<String, dynamic>> posts;
+Future<List<Map<String, dynamic>>> loadPosts() async {
+  List<Map<String, dynamic>> posts;
 
-    if (_selectedSubcategorias.isEmpty) {
-      posts = await widget.bd.mostrarPosts(); 
-    } else {
-      posts = await widget.bd.mostrarPostsBySubcategorias(_selectedSubcategorias);
-    }
+  if (_selectedCities.isEmpty && _selectedSubcategorias.isEmpty) {
 
-    print("Posts carregados: $posts");
-    return posts;
+    posts = await widget.bd.mostrarPosts();
+  } else if (_selectedCities.isEmpty) {
+
+    posts = await widget.bd.mostrarPostsBySubcategorias(_selectedSubcategorias);
+  } else{
+    posts = await widget.bd.mostrarPostsByCidade(_selectedCities);
   }
+
+  print("Posts carregados: $posts");
+  return posts;
+}
 
   @override
   void initState() {
     super.initState();
     _initializeData();
-    _onRefresh();
+    //_onRefresh();
   }
 
   Future<void> _initializeData() async {
-    bool rememberMe = await getRememberMe();
-    print("Valor de rememberMe: $rememberMe");
-    load(widget.api);
+    //bool rememberMe = await getRememberMe();
+    loadBackend(widget.api);
     setState(() {
       _postsFuture = loadPosts();
     });
   }
 
   Future<void> _onRefresh() async {
-    load(widget.api);
+    loadBackend(widget.api);
     setState(() {
       _postsFuture = loadPosts();
     });
@@ -332,25 +388,35 @@ class _MainPageState extends State<MainPage> {
                         BoxShadow(
                           color: theme.shadowColor.withOpacity(0.5),
                           spreadRadius: 2,
-                          blurRadius: 8,
-                          offset: Offset(2, 4),
+                          blurRadius: 7,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.event,
-                      color: theme.canvasColor,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.event_available_outlined, color: Colors.white),
+                        SizedBox(width: 8.0),
+                        Text(
+                          Translations.translate(context, 'create_event'),
+                          style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 12.0),
                 GestureDetector(
                   onTap: () {
                     Navigator.push(
                       context,
                       PageRouteBuilder(
                         pageBuilder: (context, animation, secondaryAnimation) =>
-                            Spacecreationpage(api: widget.api, bd: widget.bd),
+                            Spacecreationpage(
+                          api: widget.api,
+                          bd: widget.bd,
+                        ),
                         transitionsBuilder:
                             (context, animation, secondaryAnimation, child) {
                           var begin = Offset(0.0, 1.0);
@@ -377,18 +443,79 @@ class _MainPageState extends State<MainPage> {
                         BoxShadow(
                           color: theme.shadowColor.withOpacity(0.5),
                           spreadRadius: 2,
-                          blurRadius: 8,
-                          offset: Offset(2, 4),
+                          blurRadius: 7,
+                          offset: const Offset(0, 3),
                         ),
                       ],
                     ),
-                    child: Icon(
-                      Icons.store,
-                      color: theme.canvasColor,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.space_dashboard_rounded, color: Colors.white),
+                        SizedBox(width: 8.0),
+                        Text(
+                          Translations.translate(context, 'create_space'),
+                          style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        ),
+                      ],
                     ),
                   ),
                 ),
-                SizedBox(height: 16.0),
+                const SizedBox(height: 12.0),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            CalendarPage(
+                          api: widget.api,
+                          bd: widget.bd,
+                        ),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                          var begin = Offset(0.0, 1.0);
+                          var end = Offset.zero;
+                          var curve = Curves.ease;
+
+                          var tween = Tween(begin: begin, end: end)
+                              .chain(CurveTween(curve: curve));
+
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor,
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.shadowColor.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 7,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_month_rounded, color: Colors.white),
+                        SizedBox(width: 8.0),
+                        Text(
+                          Translations.translate(context, 'calendar'),
+                          style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -409,29 +536,6 @@ class _MainPageState extends State<MainPage> {
         title: Row(
           mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.only(top: 6.0),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.inputDecorationTheme.fillColor,
-                    borderRadius: BorderRadius.circular(8.0),
-                    border: Border.all(
-                      color: theme.primaryColor,
-                    ),
-                  ),
-                  child: TextField(
-                    decoration: InputDecoration(
-                      hintText: Translations.translate(context, 'looking_for'),
-                      border: InputBorder.none,
-                      prefixIcon: Icon(Icons.search),
-                      contentPadding: EdgeInsets.all(12.0),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 10),
             IconButton(
               onPressed: () {
                 Navigator.pushNamed(context, '/settingspage');
@@ -447,12 +551,18 @@ class _MainPageState extends State<MainPage> {
       ),
       drawer: CustomDrawer(
         bd: widget.bd,
-        onSubcategoriasSelected: (List<int> subcategoriasSelecionadas) {
-          setState(() {
-            _selectedSubcategorias = subcategoriasSelecionadas; // Agora é uma lista
-            _postsFuture = loadPosts(); // Recarrega os posts com base nas subcategorias selecionadas
-          });
-        },
+      onCitiesSelected: (List<int> citiesSelected) {
+        setState(() {
+          _selectedCities = citiesSelected;
+          _postsFuture = loadPosts();
+        });
+      },
+      onSubcategoriasSelected: (List<int> subcategoriasSelecionadas) {
+        setState(() {
+          _selectedSubcategorias = subcategoriasSelecionadas; 
+          _postsFuture = loadPosts(); 
+        });
+      },
       ),
        body: RefreshIndicator(
         onRefresh: _onRefresh,
@@ -535,4 +645,3 @@ class _MainPageState extends State<MainPage> {
     );
   }
 }
-

@@ -19,7 +19,7 @@ import '../mainarea/publicacoes.dart';
 
 void load(ApiService apiService) async {
   try {
-    await apiService.downloadPosts(apiService.cidade);
+    await apiService.downloadPostsCidade(apiService.cidade);
   } catch (e) {
     print("Erro no main.dart");
     print('Erro ao transferir os posts: $e');
@@ -60,8 +60,6 @@ void load(ApiService apiService) async {
     print('Erro ao transferir os eventos: $e');
   }
 }
-
-
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();

@@ -304,7 +304,11 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                       ),
                     ]),
                     SizedBox(height: 10),
-                    Text(post['evento']?['DATAEVENTO'] ?? 'Não foi possível mostrar a data'),
+                    Text(
+                      'Data do Evento: ${post['DATAEVENTO'] ?? 'Não é possível mostrar a data'}' ,
+                      style:
+                          TextStyle(fontSize: 16, color: theme.disabledColor),
+                    ),
                     SizedBox(height: 10),
                     post['IMAGEM'] != 'semimagem'
                         ? MyImageWidget(post: post)
@@ -505,9 +509,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
 
   List<Widget> _buildComentarios(List<dynamic> listaComentarios) {
     return listaComentarios.map((comentario) {
-      // Check if comentario is a list, and if so, extract the first item
       if (comentario is List && comentario.isNotEmpty) {
-        comentario = comentario[0]; // Extract the first item from the list
+        comentario = comentario[0]; 
       }
       if (comentario is Map<String, dynamic>) {
         if (comentario['APROVADO'] == 1) {
@@ -577,24 +580,16 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     return [listaopcoes, listavotos];
   }
 
-  Future<List<dynamic>> downloadComentariosPublicacoes(
-    Map<String, dynamic> post) async {
-
+  Future<List<dynamic>> downloadComentariosPublicacoes(Map<String, dynamic> post) async {
     List<dynamic> listaComentarios;
     try {
       listaComentarios = await widget.api.downloadComentarios(post['IDPUBLICACAO']);
-  
     } catch (e) {
       print("Erro ao baixar os comentários: $e");
       return [];
     }
-
-
-
     int count = 0;
     num ratingTotal = 0;
-
-
     for (var comentario in listaComentarios) {
   
       count++;
@@ -602,8 +597,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
 
     double resultado = (count == 0) ? 0 : ratingTotal / count;
-
-    // Arredondar para uma casa decimal e converter para número novamente
     String resultadoFormatado = resultado.toStringAsFixed(1);
     double resultadoFinal = double.parse(resultadoFormatado);
 

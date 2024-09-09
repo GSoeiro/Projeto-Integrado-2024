@@ -4,14 +4,14 @@ import 'package:softshares/backend/localdb.dart';
 import '../backend/apiservice.dart';
 import '../other/translations.dart';
 
-void load(ApiService apiService) async {
+/*void load(ApiService apiService) async {
   try {
-    await apiService.downloadPosts(apiService.cidade);
+    await apiService.downloadPostsCidade(apiService.cidade);
     print('Posts Transferidos com sucesso no login.dart');
   } catch (e) {
     print('Erro ao transferir os posts: $e');
   }
-}
+}*/
 
 class LoginPage extends StatefulWidget {
   final ApiService api;
@@ -134,9 +134,9 @@ class _LoginPageState extends State<LoginPage> {
 
     if (rememberme == true && cidade != null) {
       try {
-        print("Erro antes de transferir posts");
-        await widget.api.downloadPosts(cidade);
-        print("Posts transferidos com sucesso com lembrarme");
+        /*print("Erro antes de transferir posts");
+        await widget.api.downloadPostsCidade(cidade);
+        print("Posts transferidos com sucesso com lembrarme");*/
 
         if (mounted) {
           Navigator.pushReplacementNamed(context, '/welcomescreen');
@@ -402,13 +402,13 @@ class _LoginPageState extends State<LoginPage> {
           String? nomeColaborador = await widget.api.nomeColaborador;
           await prefs.setInt('IDColaborador', IDColaborador);
           await prefs.setString('nomeColaborador', nomeColaborador ?? '');
-          await prefs.setBool('rememberMe', rememberMe);
+          //await prefs.setBool('rememberMe', rememberMe);
 
-          if (rememberMe) {
+          /*if (rememberMe) {
             await prefs.setBool('rememberMe', true);
           } else {
             await prefs.remove('isLoggedIn');
-          }
+          }*/
 
           if (mounted) {
             Navigator.pushReplacementNamed(context, '/welcomescreen');

@@ -21,7 +21,6 @@ class _CalendarPageState extends State<CalendarPage> {
 
   Map<DateTime, List<Map<String, dynamic>>> _events = {};
 
-  // Função para buscar eventos e formatar as datas corretamente
   Future<void> buscarEventos() async {
     List<Map<String, dynamic>> post = await widget.bd.mostrarPosts();
     List<Map<String, dynamic>> postsFinal = [];
@@ -34,34 +33,42 @@ class _CalendarPageState extends State<CalendarPage> {
 
     Map<DateTime, List<Map<String, dynamic>>> eventosPorData = {};
 
-    for (var evento in postsFinal) {
-      var dataEvento = evento['DATAEVENTO'];
+for (var evento in postsFinal) {
+  var dataEvento = evento['DATAEVENTO'];
 
-      DateTime eventoData;
-      if (dataEvento is String) {
-        try {
-          eventoData = DateTime.parse(dataEvento);
-          print(eventoData);
-        } catch (e) {
-          try {
-            eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento);
-          } catch (e) {
-            print('Erro ao converter DATAEVENTO para DateTime: $e');
-            continue;
-          }
-        }
-      } else if (dataEvento is DateTime) {
-        eventoData = dataEvento;
-      } else {
-        print('Tipo de dado inválido para DATAEVENTO: $dataEvento');
-        continue;
-      }
+  if (dataEvento == null || dataEvento.isEmpty) {
+    print('DATAEVENTO está vazio ou nulo: $dataEvento');
+    continue;
+  }
 
-      if (!eventosPorData.containsKey(eventoData)) {
-        eventosPorData[eventoData] = [];
+  DateTime eventoData;
+  if (dataEvento is String) {
+    try {
+      eventoData = DateTime.parse(dataEvento); // Tenta usar o formato padrão ISO 8601
+      print('Data no formato ISO 8601: $eventoData');
+    } catch (e) {
+      try {
+        eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento); // Tenta o formato dd-MM-yyyy
+        print('Data no formato dd-MM-yyyy: $eventoData');
+      } catch (e) {
+        print('Erro ao converter DATAEVENTO para DateTime: $e');
+        continue; // Pula para o próximo evento
       }
-      eventosPorData[eventoData]!.add(evento);
     }
+  } else if (dataEvento is DateTime) {
+    eventoData = dataEvento;
+  } else {
+    print('Tipo de dado inválido para DATAEVENTO: $dataEvento');
+    continue;
+  }
+
+  // Adiciona o evento no mapa de eventos
+  if (!eventosPorData.containsKey(eventoData)) {
+    eventosPorData[eventoData] = [];
+  }
+  eventosPorData[eventoData]!.add(evento);
+}
+
 
     setState(() {
       _events = eventosPorData;

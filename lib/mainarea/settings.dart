@@ -18,11 +18,13 @@ class SettingsPage extends StatefulWidget {
 class _SettingsPageState extends State<SettingsPage> {
   bool _isDarkMode = false;
   bool _isAuthenticated = false;
+  String nomeColaborador = '';
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
+    _loadNomeColaborador();
   }
 
   Future<void> _loadPreferences() async {
@@ -76,6 +78,13 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
+    Future<void> _loadNomeColaborador() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      nomeColaborador = prefs.getString('nomeColaborador') ?? '';
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -103,7 +112,7 @@ class _SettingsPageState extends State<SettingsPage> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(widget.api.nomeColaborador,
+                            Text(nomeColaborador,
                                 style: TextStyle(fontSize: 23)),
                           ],
                         ),

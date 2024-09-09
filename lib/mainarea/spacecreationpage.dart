@@ -19,6 +19,7 @@ class Spacecreationpage extends StatefulWidget {
 }
 
 class _SpaceCreationPageState extends State<Spacecreationpage> {
+  final TextEditingController _cidadeController = TextEditingController();
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
   final TextEditingController _websiteController = TextEditingController();
@@ -32,6 +33,7 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
 
   int? _selectedCategoria;
   int? _selectedSubCategoria;
+   int? _selectedCidade;
   Uint8List? imageBytes;
 
   Future<void> _pickImage() async {
@@ -57,14 +59,14 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
       return;
     }
 
+    String cidade = _selectedCidade.toString();
     String titulo = _tituloController.text;
     String descricao = _descricaoController.text;
     String website = _websiteController.text;
     String categoria = _selectedCategoria.toString();
     String subcategoria = _selectedSubCategoria.toString();
 
-    await widget.api.criarEspaco(titulo, _descricaoController.text, website,
-        categoria, subcategoria, imageBytes);
+    await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes);
   }
 
   @override
@@ -94,6 +96,38 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8.0),
+                    child: Text(
+                      Translations.translate(context, 'city'),
+                      style: TextStyle(fontSize: 18),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: DropDownCidades(
+                      api: widget.api,
+                      bd: widget.bd,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCidade = value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
               SizedBox(height: 30),
               Row(
                 children: [
@@ -554,5 +588,74 @@ class Localizacao {
 
     return await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high);
+  }
+}
+
+class DropDownCidades extends StatefulWidget {
+  ApiService api;
+  final BaseDeDados bd;
+  final Function(int) onChanged;
+
+  DropDownCidades(
+      {Key? key, required this.onChanged, required this.api, required this.bd})
+      : super(key: key);
+
+  @override
+  _DropDownCidadesState createState() => _DropDownCidadesState();
+}
+
+class _DropDownCidadesState extends State<DropDownCidades> {
+  int? _selectedCidade;
+
+  late Future<List<Map<String, dynamic>>> cidadesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    cidadesFuture = widget.bd.mostrarCidades();
+    print('postsFuture initialized');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<dynamic>>(
+      future: cidadesFuture,
+      builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text('A carregar!');
+        } else if (snapshot.hasError) {
+          return Text('Erro ao carregar cidades: ${snapshot.error}');
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text('Nenhuma cidade encontrada');
+        } else {
+          List<dynamic>? cidades = snapshot.data;
+          return DropdownButtonFormField<int>(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedCidade,
+            items: cidades!.map((cidade) {
+              return DropdownMenuItem<int>(
+                value: cidade['IDCIDADE'],
+                child: Text(cidade['NOME']),
+              );
+            }).toList(),
+            hint: Text('Cidade'),
+            onChanged: (value) {
+              setState(() {
+                _selectedCidade = value;
+                widget.onChanged(value!);
+              });
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Por favor, selecione a cidade que pretende';
+              }
+              return null;
+            },
+          );
+        }
+      },
+    );
   }
 }

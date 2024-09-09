@@ -143,7 +143,7 @@ class ApiService {
           await prefs.setInt('cidade', cidade);
           await prefs.setInt('mudoupassword', mudouPassword);
 
-          await downloadPosts(cidade);
+          //await downloadPostsCidade(cidade);
           return 1;
         } else {
           return 0;
@@ -335,7 +335,7 @@ class ApiService {
     return path;
   }
 
-Future<void> downloadPosts(int id) async {
+Future<void> downloadPostsCidade(int id) async {
   try {
     var response = await http.get(
       Uri.parse(url + 'post/listBlob/$id'),
@@ -787,7 +787,7 @@ Future<void> downloadPosts(int id) async {
     }
   }
 
-Future<void> criarEspaco(String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
+Future<void> criarEspaco(String cidade, String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
   String coordenadas = '';
 
@@ -875,7 +875,7 @@ Future<void> criarEspaco(String titulo, String descricao, String website, String
               if (decodedResponse["success"] == true) {
                 print('Post criado com sucesso');
               } else {
-                print('Falha ao criar o post: ${decodedResponse["message"]}');
+                print('Falha ao criar o post: ${decodedResponse["message"]} porque ${decodedResponse["error"]}');
               }
             } else {
               print('Erro ao criar espaço1. Código de status: ${response.statusCode}');
@@ -898,8 +898,9 @@ Future<void> criarEspaco(String titulo, String descricao, String website, String
 }
 
 
-    Future<void> criarEvento(String titulo, String descricao, String categoria, String subcategoria, Uint8List? pathimagem, List<String> opcoes, String datavento) async {
+  Future<void> criarEvento(String cidade, String titulo, String descricao, String categoria, String subcategoria, Uint8List? pathimagem, List<String> opcoes, DateTime dataevento) async {
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+  String formattedEventDate = DateFormat('yyyy-MM-ddTHH:mm:ss').format(dataevento);
   try {
     print('Iniciando criação de evento...');
 
@@ -928,8 +929,8 @@ Future<void> criarEspaco(String titulo, String descricao, String website, String
           },
           body: json.encode({
             'IDQUESTIONARIO': responseQuestionarioData['data']['IDQUESTIONARIO'],
+            'DATAEVENTO': formattedEventDate,
             'ESTADO': 1,
-            'DATAEVENTO': responseQuestionarioData['data']['DATAEVENTO']
           }),
         );
         print('Resposta do evento: ${responseEvento.body}');

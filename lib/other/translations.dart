@@ -68,6 +68,7 @@ class Translations {
       'spanish': 'Espanhol',
       'selected_date': 'Selecione uma data',
       'date': 'Data'
+      
     },
     'en': {
       'morning': 'Good Morning',

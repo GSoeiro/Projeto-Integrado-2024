@@ -1,5 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:fluttertoast/fluttertoast.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -19,13 +21,12 @@ class Eventcreationpage extends StatefulWidget {
 }
 
 class _EventcreationpageState extends State<Eventcreationpage> {
+  final TextEditingController _cidadeController = TextEditingController();
   final TextEditingController _tituloController = TextEditingController();
   final TextEditingController _descricaoController = TextEditingController();
-
   final TextEditingController _categoriaController = TextEditingController();
   final TextEditingController _subcategoriaController = TextEditingController();
-  List<FormItem> formItems = List.generate(
-      2, (index) => FormItem()); // Lista para armazenar as opções dinâmicas
+  List<FormItem> formItems = List.generate(2, (index) => FormItem()); 
 
   File? _image;
   Uint8List? imageBytes;
@@ -33,9 +34,14 @@ class _EventcreationpageState extends State<Eventcreationpage> {
 
   int? _selectedCategoria;
   int? _selectedSubCategoria;
+  int? _selectedCidade;
   DateTime? _selectedDate;
 
-  Future<void> _pickImage() async {
+
+Future<void> _pickImage() async {
+  final permissionStatus = await Permission.photos.request();
+
+  if (permissionStatus.isGranted) {
     XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
@@ -47,7 +53,16 @@ class _EventcreationpageState extends State<Eventcreationpage> {
     }
 
     setState(() {});
+  } else if (permissionStatus.isDenied) {
+    // Handle the case when permission is denied
+    print('Permission denied. Please grant access to the gallery.');
+  } else if (permissionStatus.isPermanentlyDenied) {
+    // Handle the case when permission is permanently denied
+    print('Permission permanently denied. Please grant access from settings.');
+    openAppSettings();
   }
+}
+
 
   Future<void> _selectDate() async {
     DateTime now = DateTime.now();
@@ -67,28 +82,56 @@ class _EventcreationpageState extends State<Eventcreationpage> {
     }
   }
 
-  Future<void> _criarEvento() async {
-    if (_selectedCategoria == null) {
-      print('Por favor, selecione uma categoria.');
-      return;
-    }
-
-    if (_selectedSubCategoria == null) {
-      print('Por favor, selecione uma subcategoria.');
-      return;
-    }
-
-    String titulo = _tituloController.text;
-    String descricao = _descricaoController.text;
-    String categoria = _selectedCategoria.toString();
-    String subcategoria = _selectedSubCategoria.toString();
-    String dataevento = DateFormat('dd-MM-yyyy').format(_selectedDate!);
-
-    // Captura as opções dinâmicas inseridas pelo usuário
-    List<String> opcoes = formItems.map((item) => item.content).toList();
-
-    await widget.api.criarEvento(titulo, descricao, categoria, subcategoria,imageBytes, opcoes, dataevento);
+ Future<void> _criarEvento() async {
+  if (_selectedCategoria == null) {
+    print('Por favor, selecione uma categoria.');
+    return;
   }
+
+  if (_selectedSubCategoria == null) {
+    print('Por favor, selecione uma subcategoria.');
+    return;
+  }
+
+  String cidade = _selectedCidade.toString();
+  String titulo = _tituloController.text;
+  String descricao = _descricaoController.text;
+  String categoria = _selectedCategoria.toString();
+  String subcategoria = _selectedSubCategoria.toString();
+  String dataevento = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+  List<String> opcoes = formItems.map((item) => item.content).toList();
+
+  DateTime parsedDate = DateFormat('dd-MM-yyyy').parse(dataevento);
+  
+  try {
+    await widget.api.criarEvento(cidade, titulo, descricao, categoria, subcategoria, imageBytes, opcoes, parsedDate);
+
+    Fluttertoast.showToast(
+      msg: "Evento criado com sucesso!",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+
+    // Navega de volta para a página principal
+    Navigator.pop(context);
+  } catch (e) {
+    Fluttertoast.showToast(
+      msg: "Erro ao criar o evento.",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+    print('Erro ao criar evento: $e');
+  }
+}
+
 
   Widget buildDynamicRow(int index) {
     return Row(
@@ -169,7 +212,39 @@ class _EventcreationpageState extends State<Eventcreationpage> {
             child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child:
-              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  flex: 2,
+                  child: Padding(
+                    padding: EdgeInsets.only(right: 8.0),
+                    child: Text(
+                      Translations.translate(context, 'city'),
+                      style: TextStyle(fontSize: 18),
+                      maxLines: 1,
+                    ),
+                  ),
+                ),
+                SizedBox(width: 12),
+                Expanded(
+                  flex: 3,
+                  child: Padding(
+                    padding: const EdgeInsets.only(left: 8.0),
+                    child: DropDownCidades(
+                      api: widget.api,
+                      bd: widget.bd,
+                      onChanged: (value) {
+                        setState(() {
+                          _selectedCidade = value;
+                        });
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
             SizedBox(height: 30),
             Row(
               children: [
@@ -582,4 +657,73 @@ class _DropDownSubCategoriasState extends State<DropDownSubCategorias> {
 class FormItem {
   String title = '';
   String content = '';
+}
+
+class DropDownCidades extends StatefulWidget {
+  ApiService api;
+  final BaseDeDados bd;
+  final Function(int) onChanged;
+
+  DropDownCidades(
+      {Key? key, required this.onChanged, required this.api, required this.bd})
+      : super(key: key);
+
+  @override
+  _DropDownCidadesState createState() => _DropDownCidadesState();
+}
+
+class _DropDownCidadesState extends State<DropDownCidades> {
+  int? _selectedCidade;
+
+  late Future<List<Map<String, dynamic>>> cidadesFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    cidadesFuture = widget.bd.mostrarCidades();
+    print('postsFuture initialized');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<List<dynamic>>(
+      future: cidadesFuture,
+      builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return Text('A carregar!');
+        } else if (snapshot.hasError) {
+          return Text('Erro ao carregar cidades: ${snapshot.error}');
+        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+          return Text('Nenhuma cidade encontrada');
+        } else {
+          List<dynamic>? cidades = snapshot.data;
+          return DropdownButtonFormField<int>(
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+            ),
+            value: _selectedCidade,
+            items: cidades!.map((cidade) {
+              return DropdownMenuItem<int>(
+                value: cidade['IDCIDADE'],
+                child: Text(cidade['NOME']),
+              );
+            }).toList(),
+            hint: Text('Cidade'),
+            onChanged: (value) {
+              setState(() {
+                _selectedCidade = value;
+                widget.onChanged(value!);
+              });
+            },
+            validator: (value) {
+              if (value == null) {
+                return 'Por favor, selecione a cidade que pretende';
+              }
+              return null;
+            },
+          );
+        }
+      },
+    );
+  }
 }

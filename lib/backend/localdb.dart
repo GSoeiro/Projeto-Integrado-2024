@@ -27,7 +27,7 @@ class BaseDeDados {
     String path = join(await getDatabasesPath(), nomeBD);
 
     // Apaga a db e depois abre novamente (para teste, pelo menos comentar a linha quando for para dar flutter build apk --release)
-    //(await deleteDatabase(path));
+    (await deleteDatabase(path));
     return await openDatabase(
       path,
       version: versao,
@@ -103,6 +103,34 @@ class BaseDeDados {
 
     await db.execute('''
     CREATE TABLE POST (
+      IDPUBLICACAO INTEGER PRIMARY KEY AUTOINCREMENT,
+      CIDADE INTEGER NULL,
+      NOMECIDADE TEXT NULL,
+      APROVACAO INTEGER NULL,
+      COLABORADOR INTEGER NULL,
+      NOMECOLABORADOR TEXT NULL,
+      CATEGORIA INTEGER NULL,
+      NOMECATEGORIA TEXT NULL,
+      SUBCATEGORIA INTEGER NULL,
+      NOMESUBCATEGORIA TEXT NULL,
+      ESPACO INTEGER NULL,
+      EVENTO INTEGER NULL,
+      DATAPUBLICACAO DATETIME NULL,
+      DATAULTIMAATIVIDADE DATETIME NULL,
+      TITULO TEXT NULL,
+      TEXTO TEXT NULL,
+      RATING INT NULL,
+      IMAGEM TEXT NULL,
+      IDQUESTIONARIO INTEGER NULL,
+      DATAEVENTO TEXT NULL,
+      COORDENADAS TEXT NULL,
+      WEBSITE TEXT NULL,
+      VIEWS INTEGER NULL
+    )
+  ''');
+
+    await db.execute('''
+    CREATE TABLE POSTCIDADE (
       IDPUBLICACAO INTEGER PRIMARY KEY AUTOINCREMENT,
       CIDADE INTEGER NULL,
       NOMECIDADE TEXT NULL,
@@ -461,8 +489,10 @@ class BaseDeDados {
     if (post['DATAEVENTO'] is DateTime) {
       post['DATAEVENTO'] = formatDateTime(post['DATAEVENTO']);
     }
-    return await db.insert('POST', post);
+    return await db.insert('POST', post, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
+
+
 
   Future<List<Map<String, dynamic>>> mostrarPosts() async {
     try {
@@ -476,30 +506,25 @@ class BaseDeDados {
     }
   }
 
-    /*Future<List<Map<String, dynamic>>> mostrarPostsBySubcategoria(int subcategoriaId) async {
-      Database db = await basededados;
-    final query = 'SELECT * FROM POST WHERE SUBCATEGORIA = ?';
-    final result = await db.rawQuery(query, [subcategoriaId]);
-    return result;
-  }*/
-
   Future<List<Map<String, dynamic>>> mostrarPostsBySubcategorias(List<int> subcategoriaIds) async {
   Database db = await basededados;
-  
-  // Verifica se a lista de subcategorias está vazia
   if (subcategoriaIds.isEmpty) {
-    return []; // Retorna uma lista vazia se nenhuma subcategoria for selecionada
+    return []; 
   }
-
-  // Constrói a string da cláusula IN usando os IDs das subcategorias
   String placeholders = List.filled(subcategoriaIds.length, '?').join(', ');
-
-  // Consulta SQL para buscar posts cujas subcategorias estejam na lista
   final query = 'SELECT * FROM POST WHERE SUBCATEGORIA IN ($placeholders)';
-
-  // Executa a consulta passando os IDs das subcategorias
   final result = await db.rawQuery(query, subcategoriaIds);
+  return result;
+}
 
+  Future<List<Map<String, dynamic>>> mostrarPostsByCidade(List<int> cidadeID) async {
+  Database db = await basededados;
+  if (cidadeID.isEmpty) {
+    return []; 
+  }
+  String placeholders = List.filled(cidadeID.length, '?').join(', ');
+  final query = 'SELECT * FROM POST WHERE CIDADE IN ($placeholders)';
+  final result = await db.rawQuery(query, cidadeID);
   return result;
 }
 

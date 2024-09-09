@@ -125,41 +125,6 @@ class _RegisterPageState extends State<RegisterPage> {
       },
     );
   }
-
-  void _showCitySelectionPopup(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Escolha a sua cidade de trabalho'),
-          content: DropDownCidades(
-            api: widget.api,
-            bd: widget.bd,
-            onChanged: (cityId) {
-              setState(() {
-                _selectedCidade = cityId;
-              });
-            },
-          ),
-          actions: <Widget>[
-            TextButton(
-              child: Text('OK'),
-              onPressed: () {
-                if (_selectedCidade != null) {
-                  Navigator.of(context).pop();
-                  _registar();
-                } else {
-                  _showErrorDialog(
-                      'Erro', 'Escolha uma das cidades disponíveis.');
-                }
-              },
-            ),
-          ],
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
