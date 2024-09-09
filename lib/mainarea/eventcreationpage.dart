@@ -1,13 +1,15 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:softshares/other/translations.dart';
-import '../backend/apiservice.dart';
+import '../services/apiservice.dart';
 
 class Eventcreationpage extends StatefulWidget {
   final ApiService api;
@@ -27,6 +29,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
   final TextEditingController _categoriaController = TextEditingController();
   final TextEditingController _subcategoriaController = TextEditingController();
   List<FormItem> formItems = List.generate(2, (index) => FormItem()); 
+  String cidadeColaborador = '';
 
   File? _image;
   Uint8List? imageBytes;
@@ -62,6 +65,13 @@ Future<void> _pickImage() async {
     openAppSettings();
   }
 }
+
+  Future<void> _loadCidadeColaborador() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    setState(() {
+      cidadeColaborador = prefs.getString('cidade') ?? '';
+    });
+  }
 
 
   Future<void> _selectDate() async {
@@ -106,6 +116,17 @@ Future<void> _pickImage() async {
   try {
     await widget.api.criarEvento(cidade, titulo, descricao, categoria, subcategoria, imageBytes, opcoes, parsedDate);
 
+      AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 10,
+          channelKey: 'events_channel',
+          title: 'Novo Evento Na Sua Cidade',
+          body: '$titulo',
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+    
+
     Fluttertoast.showToast(
       msg: "Evento criado com sucesso!",
       toastLength: Toast.LENGTH_SHORT,
@@ -117,7 +138,7 @@ Future<void> _pickImage() async {
     );
 
     // Navega de volta para a página principal
-    Navigator.pop(context);
+    Navigator.pushReplacementNamed(context, '/mainpage');
   } catch (e) {
     Fluttertoast.showToast(
       msg: "Erro ao criar o evento.",

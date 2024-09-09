@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:softshares/backend/apiservice.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/apiservice.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:softshares/mainarea/publicacoes.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';

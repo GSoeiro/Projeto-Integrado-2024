@@ -12,8 +12,8 @@ import 'mainarea/mainpage.dart';
 import 'recover/recover.dart';
 import 'register/register.dart';
 import 'mainarea/settings.dart';
-import 'backend/apiservice.dart';
-import 'backend/localdb.dart';
+import 'services/apiservice.dart';
+import 'services/localdb.dart';
 import 'other/themes.dart';
 import 'other/locale.dart';
 import '../mainarea/publicacoes.dart';
@@ -63,11 +63,27 @@ void load(ApiService apiService) async {
 }
 
 void main() async {
-  AwesomeNotifications().initialize(null, 
-    [NotificationChannel(channelKey: 'basic_channel', channelName: 'Basic Notification', channelDescription: 'test')],
-  debug: true,
-  );
 
+  AwesomeNotifications().initialize(
+    null,
+    [
+      NotificationChannel(
+        channelKey: 'events_channel',
+        channelName: 'Notificação de Eventos',
+        channelDescription: 'Notificações de eventos',
+        defaultColor: Color(0xFF9D50DD),
+        ledColor: Colors.white,
+      ),
+      NotificationChannel(
+        channelKey: 'spaces_channel',
+        channelName: 'Notificação de Espaços',
+        channelDescription: 'Notificações de Espaços',
+        defaultColor: Color(0xFF9D50DD),
+        ledColor: Colors.white,
+      )
+    ],
+  );
+  AwesomeNotifications().requestPermissionToSendNotifications();
   WidgetsFlutterBinding.ensureInitialized();
   ApiService apiService = ApiService();
   BaseDeDados bd = BaseDeDados();
@@ -105,6 +121,13 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _isDarkMode = widget.isDarkMode;
     load(widget.apiService);
+     AwesomeNotifications().requestPermissionToSendNotifications().then((granted) {
+      if (granted) {
+        print('Permissão para notificações concedida');
+      } else {
+        print('Permissão para notificações negada');
+      }
+    });
   }
 
   void _toggleTheme() {

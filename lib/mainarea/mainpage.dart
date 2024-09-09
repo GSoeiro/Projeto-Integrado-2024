@@ -2,12 +2,12 @@ import 'dart:io';
 import 'dart:ui';
 import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:softshares/mainarea/calendar.dart';
 import 'package:softshares/other/translations.dart';
 import '/mainarea/eventcreationpage.dart';
 import '/mainarea/spacecreationpage.dart';
-import '../backend/apiservice.dart';
+import '../services/apiservice.dart';
 
 //---------------------- Carregar dados da API ----------------------//
 
@@ -92,7 +92,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
     _cidades = widget.bd.mostrarCidades();
     _subcategorias = {};
   }
-
+  
   void _updateSubcategorias(int categoriaId) async {
     setState(() {
       _subcategorias[categoriaId] = widget.bd.mostrarSubCategorias(categoriaId);

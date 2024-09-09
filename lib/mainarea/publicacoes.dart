@@ -1,10 +1,13 @@
 import 'dart:io';
+import 'package:flutter/cupertino.dart';
+import 'package:flutter/widgets.dart';
+import 'package:http/http.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'dart:typed_data';
-import 'package:softshares/backend/apiservice.dart';
+import 'package:softshares/services/apiservice.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class MyImageWidget extends StatelessWidget {
@@ -27,11 +30,13 @@ class PostDetailsPage extends StatefulWidget {
 }
 
 class PostDetailsPageState extends State<PostDetailsPage> {
-  List<Map<String, dynamic>> listaopcoes = []; 
-  List<Map<String, dynamic>> listavotos = []; 
+  List<Map<String, dynamic>> listaopcoes = [];
+  List<Map<String, dynamic>> listavotos = [];
   int avaliacaoEstrelas = 0;
   int comentarioCriado = 0;
+  int rating = 0;
   TextEditingController comentarController = TextEditingController();
+  TextEditingController textoDenunciarController = TextEditingController();
 
   bool atualizar = true;
 
@@ -57,6 +62,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
       throw 'Não foi possível abrir o Google Maps com as coordenadas fornecidas.';
     }
   }
+
+ 
 
   Future<void> _launchWebsite(String url) async {
     if (await canLaunch(url)) {
@@ -131,8 +138,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Widget build(BuildContext context) {
-    final Map<String, dynamic> post =
-        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final Map<String, dynamic> post = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final ThemeData theme = Theme.of(context);
 
     Uint8List imageBytes;
@@ -215,12 +221,12 @@ class PostDetailsPageState extends State<PostDetailsPage> {
               } else if (snapshot.hasData) {
                 var listaComentarios = snapshot.data ?? [];
                 return Column(
-                  children: _buildComentarios(listaComentarios),
+                  children: _buildComentarios(listaComentarios, post) ,
                 );
               } else {
-                 List<dynamic> comentarios = snapshot.data!;
-                 return Column(
-                  children: _buildComentarios(comentarios),
+                List<dynamic> comentarios = snapshot.data!;
+                return Column(
+                  children: _buildComentarios(comentarios, post),
                 );
               }
             },
@@ -253,11 +259,9 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                   actions: [
                     IconButton(
                       onPressed: () {
-                
                         if (post['COORDENADAS'] != null &&
                             post['COORDENADAS'].isNotEmpty) {
                           try {
-    
                             String coordenadasString =
                                 post['COORDENADAS'].trim();
                             _openGoogleMaps(coordenadasString);
@@ -309,7 +313,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                     ]),
                     SizedBox(height: 10),
                     Text(
-                      'Data do Evento: ${post['DATAEVENTO'] ?? 'Não é possível mostrar a data'}' ,
+                      'Data do Evento: ${post['DATAEVENTO'] ?? 'Não é possível mostrar a data'}',
                       style:
                           TextStyle(fontSize: 16, color: theme.disabledColor),
                     ),
@@ -346,7 +350,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                         } else if (snapshot.hasData) {
                           var listaComentarios = snapshot.data ?? [];
                           return Column(
-                            children: _buildComentarios(listaComentarios),
+                            children: _buildComentarios(listaComentarios, post),
                           );
                         } else {
                           return Center(child: Text("Erro!"));
@@ -421,19 +425,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-  List<Widget> buildRatingStars(int rating) {
-    List<Widget> stars = [];
-    for (int i = 1; i <= 5; i++) {
-      stars.add(
-        Icon(
-          i <= rating ? Icons.star : Icons.star_border,
-          color: Colors.amber,
-          size: 16.0,
-        ),
-      );
-    }
-    return stars;
-  }
+
 
   Widget _criarComentario(Map<String, dynamic> post) {
     return Column(
@@ -478,7 +470,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           children: [
             ElevatedButton(
               onPressed: () async {
-                await widget.api.comentar(post['IDPUBLICACAO'].toString(), avaliacaoEstrelas.toString(), comentarController.text);
+                await widget.api.comentar(post['IDPUBLICACAO'].toString(),
+                    avaliacaoEstrelas.toString(), comentarController.text);
                 setState(() {
                   comentarioCriado = 0;
                 });
@@ -508,55 +501,18 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     );
   }
 
-  List<Widget> _buildComentarios(List<dynamic> listaComentarios) {
+  List<Widget> _buildComentarios(List<dynamic> listaComentarios, Map<String, dynamic> post) {
     return listaComentarios.map((comentario) {
       if (comentario is List && comentario.isNotEmpty) {
-        comentario = comentario[0]; 
+        comentario = comentario[0];
       }
       if (comentario is Map<String, dynamic>) {
         if (comentario['APROVADO'] == 1) {
-          return Card(
-            margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-            child: Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text(comentario['NOMECOLABORADOR'],
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Colors.blue,
-                        ),
-                      ),
-                      Text(comentario['DATACOMENTARIO'],
-                        style: TextStyle(
-                          color: Colors.grey,
-                        ),
-                      ),
-                    ],
-                  ),
-                  SizedBox(height: 8.0),
-                  Row(
-                    children: buildRatingStars(comentario['AVALIACAO']),
-                  ),
-                  SizedBox(height: 8.0),
-                  if (comentario['TEXTO'] != '')
-                    Padding(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      child: Text(
-                        comentario['TEXTO'],
-                        style: TextStyle(
-                          fontSize: 14.0,
-                        ),
-                      ),
-                    ),
-                ],
-              ),
-            ),
-          );
+          print(comentario);
+          print(comentario['IDCOMENTARIO']);
+          print(post);
+          print(post['CIDADE']);
+          return ComentarioCard(comentario: comentario, cidade: post['CIDADE'], api: widget.api);
         } else {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -573,8 +529,29 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }).toList();
   }
 
+  Widget buildCommentsRatingStars() {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.start,
+      children: List.generate(5, (index) {
+        return IconButton(
+          icon: Icon(
+            index < avaliacaoEstrelas ? Icons.star : Icons.star_border,
+            color: Colors.amber,
+            size: 25,
+          ),
+          onPressed: () {
+            setState(() {
+              avaliacaoEstrelas = index + 1;
+            });
+          },
+        );
+      }),
+    );
+  }
+
   Future<List<dynamic>> downloadOpcoesEVotos(Map<String, dynamic> post) async {
-    List<Map<String, dynamic>> listaopcoes = await widget.api.downloadOpcoesEscolha(post['IDQUESTIONARIO']);
+    List<Map<String, dynamic>> listaopcoes =
+        await widget.api.downloadOpcoesEscolha(post['IDQUESTIONARIO']);
     List<Map<String, dynamic>> listavotos = await widget.api.downloadVotos();
     return [listaopcoes, listavotos];
   }
@@ -590,7 +567,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     int count = 0;
     num ratingTotal = 0;
     for (var comentario in listaComentarios) {
-  
       count++;
       ratingTotal += comentario['AVALIACAO'];
     }
@@ -608,3 +584,171 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     return listaComentarios;
   }
 }
+
+
+class ComentarioCard extends StatefulWidget {
+  final Map<String, dynamic> comentario;
+  final int cidade;
+  final ApiService api;
+
+  ComentarioCard({required this.comentario, required this.cidade, required this.api});
+
+  @override
+  _ComentarioCardState createState() => _ComentarioCardState();
+}
+
+class _ComentarioCardState extends State<ComentarioCard> {
+  int rating = 0;
+  bool hasUpvoted = false;
+  bool hasDownvoted = false;
+  TextEditingController textoDenunciarController = TextEditingController();
+
+   void _denunciarPopUp(int idcomentario, int cidade) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text('Motivo da denuncia'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                minLines: 1,
+                maxLines: 6,
+                controller: textoDenunciarController,
+                decoration: InputDecoration(
+                    hintText: 'Motivo da denuncia'),
+                obscureText: false,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () async{
+                await widget.api.denunciar(idcomentario, textoDenunciarController.text, cidade);
+              },
+              child: const Text("Denunciar"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+    List<Widget> buildRatingStars(int rating) {
+    List<Widget> stars = [];
+    for (int i = 1; i <= 5; i++) {
+      stars.add(
+        Icon(
+          i <= rating ? Icons.star : Icons.star_border,
+          color: Colors.amber,
+          size: 16.0,
+        ),
+      );
+    }
+    return stars;
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    print(widget.comentario['AVALIACAO']);
+    rating = widget.comentario['AVALIACAO'] ?? 0;
+    print("Cenas");
+  }
+
+  @override
+  Widget build(BuildContext context) {
+
+    //final post = widget.post;
+
+    if (widget.comentario['APROVADO'] != 1) {
+      return SizedBox.shrink();
+    }
+
+  return Card(
+  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+  child: Padding(
+    padding: EdgeInsets.all(16.0),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        // Cabeçalho do comentário (nome e data com botão de denunciar)
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              widget.comentario['NOMECOLABORADOR'] ?? 'Erro',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                color: Colors.blue,
+              ),
+            ),
+            Row(
+              children: [
+                Text(
+                  widget.comentario['DATACOMENTARIO'] ?? 'Erro',
+                  style: TextStyle(
+                    color: Colors.grey,
+                  ),
+                ),
+                IconButton(
+                  onPressed: () {
+                    _denunciarPopUp(widget.comentario['IDCOMENTARIO'], widget.cidade);
+                  },
+                  icon: Icon(Icons.flag, color: Colors.red),
+                ),
+              ],
+            ),
+          ],
+        ),
+        SizedBox(height: 8.0),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: buildRatingStars(widget.comentario['AVALIACAO']),
+        ),
+        if (widget.comentario['TEXTO'] != '')
+          Padding(
+            padding: const EdgeInsets.only(top: 8.0),
+            child: Text(
+              widget.comentario['TEXTO'] ?? 'Erro',
+              style: TextStyle(
+                fontSize: 14.0,
+              ),
+            ),
+          ),
+       SizedBox(height: 16.0),
+            // Seção de upvote e downvote
+            Row(
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                IconButton(
+                  onPressed: () async{
+                    await widget.api.updateRatingComentario(widget.comentario['IDCOMENTARIO'], widget.comentario['AVALIACAO']+1);
+                    setState(() {
+                      rating = widget.comentario['AVALIACAO']+1;
+                    });
+                  },
+                  icon: Icon(Icons.thumb_up, color: Colors.green),
+                ),
+                Text(widget.comentario['AVALIACAO']),
+                SizedBox(width: 16.0),
+                IconButton(
+                 onPressed: () async{
+                    await widget.api.updateRatingComentario(widget.comentario['IDCOMENTARIO'],widget.comentario['AVALIACAO']-1);
+                    setState(() {
+                      rating = widget.comentario['AVALIACAO']-1;
+                    });
+                  },
+                  icon: Icon(Icons.thumb_down, color: Colors.red),
+                ),
+              ],
+            ),
+      ],
+    ),
+  ),
+);
+  }
+}
+

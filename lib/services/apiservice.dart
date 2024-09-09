@@ -6,7 +6,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:intl/intl.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:sqflite/sqflite.dart';
 
 class ApiService {
@@ -142,7 +142,6 @@ class ApiService {
           await prefs.setString('nomeColaborador', nomeColaborador);
           await prefs.setInt('cidade', cidade);
           await prefs.setInt('mudoupassword', mudouPassword);
-
           //await downloadPostsCidade(cidade);
           return 1;
         } else {
@@ -365,8 +364,35 @@ Future<void> downloadPostsCidade(int id) async {
             path ='semimagem'; 
           }
 
-          // Montando o mapa de publicações
-          Map<String, dynamic> publicacoes = {
+          Map<String, dynamic> publicacoes;
+          if(post['EVENTO'] == 1){
+            publicacoes = {
+            'IDPUBLICACAO': post['IDPUBLICACAO'],
+            'CIDADE': post['CIDADE'],
+            'NOMECIDADE': post['cidade']['NOME'],
+            'APROVACAO': post['APROVACAO'],
+            'COLABORADOR': post['COLABORADOR'],
+            'NOMECOLABORADOR': post['colaborador']['NOME'],
+            'CATEGORIA': post['CATEGORIA'],
+            'NOMECATEGORIA': post['categorium']['NOME'],
+            'SUBCATEGORIA': post['SUBCATEGORIA'],
+            'NOMESUBCATEGORIA': post['subcategorium']['NOME'],
+            'ESPACO': post['ESPACO'],
+            'EVENTO': post['EVENTO'],
+            'DATAPUBLICACAO': formatDateTime(post['DATAPUBLICACAO']),
+            'DATAULTIMAATIVIDADE': formatDateTime(post['DATAULTIMAATIVIDADE']),
+            'TITULO': post['TITULO'],
+            'TEXTO': post['TEXTO'],
+            'RATING': post['RATING'],
+            'IMAGEM': path, 
+            'IDQUESTIONARIO': post['evento']?['IDQUESTIONARIO'],
+            'DATAEVENTO': '2024-01-01',
+            'COORDENADAS': post['espaco']?['COORDENADAS'],
+            'WEBSITE': post['espaco']?['WEBSITE'],
+            'VIEWS': post['VIEWS'],
+          };
+          }else{
+            publicacoes = {
             'IDPUBLICACAO': post['IDPUBLICACAO'],
             'CIDADE': post['CIDADE'],
             'NOMECIDADE': post['cidade']['NOME'],
@@ -391,7 +417,7 @@ Future<void> downloadPostsCidade(int id) async {
             'WEBSITE': post['espaco']?['WEBSITE'],
             'VIEWS': post['VIEWS'],
           };
-
+          }
           if (post['aprovacao']['APROVADA'] == 1) {
             await bd.insertPost(publicacoes);
           }
@@ -644,20 +670,19 @@ Future<void> downloadPostsCidade(int id) async {
           'Content-Type': 'application/json',
         },
       );
-
       if (response.statusCode == 200) {
         var responseData = json.decode(response.body);
-
         if (responseData["success"] == true) {
           List<dynamic> comments = responseData['data'];
           List<Map<String, dynamic>> comentariosList = [];
 
           comments.forEach((comment) {
             Map<String, dynamic> comentarios = {
+              'IDCOMENTARIO': comment['IDCOMENTARIO'],
               'IDPOST': comment['IDPOST'],
               'APROVADO': comment['aprovacao']['APROVADA'],
               'IDCOLABORADOR': comment['IDCOLABORADOR'],
-              'NOMECOLABORADOR': comment['colaborador'],
+              'NOMECOLABORADOR': comment['colaborador']['NOME'],
               'DATACOMENTARIO': formatDateTime(comment['DATACOMENTARIO']),
               'AVALIACAO': comment['AVALIACAO'],
               'TEXTO': comment['TEXTO'],
@@ -742,7 +767,8 @@ Future<void> downloadPostsCidade(int id) async {
               'IDCOLABORADOR': IDCOLABORADOR,
               'DATACOMENTARIO': formattedDate,
               'AVALIACAO': avaliacao,
-              'TEXTO': texto
+              'TEXTO': texto,
+              'RATING': 0
             }),
           );
           if (response2.statusCode == 200) {
@@ -759,6 +785,58 @@ Future<void> downloadPostsCidade(int id) async {
     } catch (err) {}
     return 1;
   }
+
+    Future<int> denunciar(int idcomentario, String texto, int cidade) async {
+    String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
+    try {
+      var response = await http.post(
+        Uri.parse(url + 'denuncia/create'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'COLABORADOR': IDCOLABORADOR,
+          'COMENTARIO': idcomentario,
+          'DATADENUNCIA': formattedDate,
+          'MOTIVO': texto,
+          'CIDADE': cidade
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return 1;
+      } else {
+        print('HTTP Error: ${response.statusCode}, ${response.body}');
+        return 0;
+      }
+    } catch (error) {
+      print('Error: $error');
+      return 0;
+    }
+  }
+
+   Future<int> updateRatingComentario(int idcomentario, int rating) async {
+    try {
+      var response = await http.put(
+        Uri.parse(url + 'comentario/updateRating/$idcomentario'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'RATING': rating
+        }),
+      );
+      if (response.statusCode == 200 || response.statusCode == 204) {
+        return 1;
+      } else {
+        print('HTTP Error: ${response.statusCode}, ${response.body}');
+        return 0;
+      }
+    } catch (error) {
+      print('Error: $error');
+      return 0;
+    }
+  }
+
 
   Future<int> votar(int IDOPCOESESCOLHA) async {
     String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());

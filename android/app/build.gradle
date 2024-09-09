@@ -1,8 +1,8 @@
 plugins {
     id "com.android.application"
     id "kotlin-android"
-    // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id "dev.flutter.flutter-gradle-plugin"
+    //id 'com.google.gms.google-services'
 }
 
 def localProperties = new Properties()
@@ -25,7 +25,7 @@ if (flutterVersionName == null) {
 
 android {
     namespace = "com.example.softshares"
-    compileSdk = 34
+    compileSdkVersion 34
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
@@ -56,3 +56,7 @@ android {
 flutter {
     source = "../.."
 }
+
+/*dependecies{
+    implementation plattform('com.google.firebase:firebase-bom:32.7.2')
+}*/

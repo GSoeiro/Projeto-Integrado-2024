@@ -8,8 +8,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:softshares/main.dart';
-import 'package:softshares/backend/apiservice.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/apiservice.dart';
+import 'package:softshares/services/localdb.dart';
 
 
 void main() {

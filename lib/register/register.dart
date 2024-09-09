@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:softshares/other/translations.dart';
-import '../backend/apiservice.dart';
+import '../services/apiservice.dart';
 import 'dart:math';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server.dart';

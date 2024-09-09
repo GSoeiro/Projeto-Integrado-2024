@@ -1,10 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/services/localdb.dart';
 import 'package:softshares/other/translations.dart';
-import '../backend/apiservice.dart';
+import '../services/apiservice.dart';
 import 'package:geolocator/geolocator.dart';
 
 class Spacecreationpage extends StatefulWidget {
@@ -68,9 +70,45 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
     String subcategoria = _selectedSubCategoria.toString();
     String preco = _precoController.text;
     
+    try{
+      await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes, preco);
 
-    await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes, preco);
+        AwesomeNotifications().createNotification(
+        content: NotificationContent(
+          id: 10,
+          channelKey: 'space_channel',
+          title: 'Novo Espaço Criado',
+          body: '$titulo',
+          notificationLayout: NotificationLayout.BigText,
+        ),
+      );
+    
+
+    Fluttertoast.showToast(
+      msg: "Espaço criado com sucesso!",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.green,
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+
+    // Navega de volta para a página principal
+    Navigator.pushReplacementNamed(context, '/mainpage');
+  } catch (e) {
+    Fluttertoast.showToast(
+      msg: "Erro ao criar o espaço.",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 1,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+    print('Erro ao criar espaço: $e');
   }
+}   
 
   @override
   Widget build(BuildContext context) {

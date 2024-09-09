@@ -187,7 +187,8 @@ class BaseDeDados {
 
     await db.execute('''
     CREATE TABLE COMENTARIO (
-      IDPOST INTEGER NOT NULL,
+      IDCOMENTARIO INTEGER PRIMARY KEY AUTOINCREMENT,
+      IDPOST INTEGER NULL,
       APROVADO INTEGER NULL,
       IDCOLABORADOR INTEGER NULL,
       NOMECOLABORADOR TEXT NULL,
@@ -232,7 +233,7 @@ class BaseDeDados {
     try {
       Database db = await basededados;
 
-      return await db.insert('COLABORADORLOCAL', colaborador);
+      return await db.insert('COLABORADORLOCAL', colaborador,  conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       print("Error inserir colaborador: $e");
       return -1;
@@ -270,7 +271,7 @@ class BaseDeDados {
         event['DATAEVENTO'] = formatDateTime(event['DATAEVENTO']);
       }
 
-      return await db.insert('EVENTO', event);
+      return await db.insert('EVENTO', event, conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       return -1;
     }
@@ -299,7 +300,7 @@ class BaseDeDados {
     try {
       Database db = await basededados;
       await apagarVotos();
-      return await db.insert('VOTO', voto);
+      return await db.insert('VOTO', voto, conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       print("Error inserir voto: $e");
       return -1;
@@ -332,7 +333,7 @@ class BaseDeDados {
 
       await apagarOpcoesEscolha();
 
-      return await db.insert('OPCAO', opcao);
+      return await db.insert('OPCAO', opcao, conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       print("Error inserir OPCAO: $e");
       return -1;
@@ -356,7 +357,7 @@ class BaseDeDados {
     try {
       Database db = await basededados;
 
-      return await db.insert('CIDADE', cidade);
+      return await db.insert('CIDADE', cidade, conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       print("Error inserir cidade: $e");
       return -1;
@@ -413,7 +414,7 @@ class BaseDeDados {
   Future<int> insertCategoria(Map<String, dynamic> categoria) async {
     try {
       Database db = await basededados;
-      return await db.insert('CATEGORIA', categoria);
+      return await db.insert('CATEGORIA', categoria, conflictAlgorithm: ConflictAlgorithm.ignore);
     } catch (e) {
       print("Error inserir categoria: $e");
       return -1;
@@ -435,7 +436,7 @@ class BaseDeDados {
   Future<int> insertSubcategoria(Map<String, dynamic> subcategoria) async {
     Database db = await basededados;
 
-    return await db.insert('SUBCATEGORIA', subcategoria);
+    return await db.insert('SUBCATEGORIA', subcategoria, conflictAlgorithm: ConflictAlgorithm.ignore);
   }
 
   Future<List<Map<String, dynamic>>> mostrarSubCategorias(
@@ -543,7 +544,6 @@ class BaseDeDados {
     if (comentario['DATACOMENTARIO'] is DateTime) {
       comentario['DATACOMENTARIO'] = formatDateTime(comentario['DATACOMENTARIO']);
     }
-
     return await db.insert('COMENTARIO', comentario);
   }
 

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import '../backend/apiservice.dart';
+import '../services/apiservice.dart';
 
 class PasswordDefine extends StatefulWidget {
   final ApiService api;
