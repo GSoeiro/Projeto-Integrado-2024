@@ -20,7 +20,8 @@ class MyImageWidget extends StatelessWidget {
 
 class PostDetailsPage extends StatefulWidget {
   final ApiService api;
-  PostDetailsPage({required this.api});
+  final Map<String, dynamic> event;
+  PostDetailsPage({required this.api, required this.event});
   @override
   State<PostDetailsPage> createState() => PostDetailsPageState();
 }
@@ -217,7 +218,10 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                   children: _buildComentarios(listaComentarios),
                 );
               } else {
-                return Center(child: Text("Erro!"));
+                 List<dynamic> comentarios = snapshot.data!;
+                 return Column(
+                  children: _buildComentarios(comentarios),
+                );
               }
             },
           ),
@@ -474,21 +478,18 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           children: [
             ElevatedButton(
               onPressed: () async {
-                await widget.api.comentar(post['IDPUBLICACAO'].toString(),
-                    avaliacaoEstrelas.toString(), comentarController.text);
+                await widget.api.comentar(post['IDPUBLICACAO'].toString(), avaliacaoEstrelas.toString(), comentarController.text);
                 setState(() {
                   comentarioCriado = 0;
                 });
                 if (1 > 0) {
-                  // Se o comentário foi criado com sucesso
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text('Comentário enviado com sucesso!'),
-                      duration: Duration(seconds: 3), // Duração de 3 segundos
+                      duration: Duration(seconds: 3),
                     ),
                   );
                 } else {
-                  // Caso algo tenha dado errado (opcional)
                   ScaffoldMessenger.of(context).showSnackBar(
                     SnackBar(
                       content: Text(
@@ -524,15 +525,13 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        comentario['NOMECOLABORADOR'],
+                      Text(comentario['NOMECOLABORADOR'],
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           color: Colors.blue,
                         ),
                       ),
-                      Text(
-                        comentario['DATACOMENTARIO'],
+                      Text(comentario['DATACOMENTARIO'],
                         style: TextStyle(
                           color: Colors.grey,
                         ),
@@ -606,7 +605,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     } catch (e) {
       print("Erro ao atualizar o rating: $e");
     }
-
     return listaComentarios;
   }
 }

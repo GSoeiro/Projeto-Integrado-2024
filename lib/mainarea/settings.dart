@@ -17,7 +17,6 @@ class SettingsPage extends StatefulWidget {
 
 class _SettingsPageState extends State<SettingsPage> {
   bool _isDarkMode = false;
-  bool _isAuthenticated = false;
   String nomeColaborador = '';
 
   @override
@@ -31,23 +30,17 @@ class _SettingsPageState extends State<SettingsPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false;
-      _isAuthenticated = prefs.getBool('rememberMe') ?? false;
-      if (_isAuthenticated) {
-        String? savedLanguage = prefs.getString('languageCode');
-        if (savedLanguage != null) {
-          Provider.of<LocaleProvider>(context, listen: false)
-              .setLocale(Locale(savedLanguage));
-        }
+      String? savedLanguage = prefs.getString('languageCode');
+      if (savedLanguage != null) {
+        Provider.of<LocaleProvider>(context, listen: false)
+            .setLocale(Locale(savedLanguage));
       }
     });
   }
 
   Future<void> _saveThemePreference(bool isDarkMode) async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    if (_isAuthenticated) {
-      // Only save if authenticated
-      await prefs.setBool('isDarkMode', isDarkMode);
-    }
+    await prefs.setBool('isDarkMode', isDarkMode);
   }
 
   void _toggleDarkMode(bool value) {
@@ -62,23 +55,20 @@ class _SettingsPageState extends State<SettingsPage> {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     await prefs.remove('cidade');
     await prefs.remove('nomeColaborador');
-    await prefs.remove('rememberMe');
     await prefs.remove('isDarkMode');
     await prefs.remove('languageCode');
+    widget.onThemeToggle();
     Navigator.pushReplacementNamed(context, '/loginpage');
   }
 
   void _changeLanguage(String languageCode) async {
     Provider.of<LocaleProvider>(context, listen: false)
         .setLocale(Locale(languageCode));
-    if (_isAuthenticated) {
-      // Only save if authenticated
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      await prefs.setString('languageCode', languageCode);
-    }
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.setString('languageCode', languageCode);
   }
 
-    Future<void> _loadNomeColaborador() async {
+  Future<void> _loadNomeColaborador() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       nomeColaborador = prefs.getString('nomeColaborador') ?? '';
@@ -102,23 +92,23 @@ class _SettingsPageState extends State<SettingsPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Image.asset('images/settingsimage.png',
-                          width: 70, height: 70),
-                      SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(nomeColaborador,
-                                style: TextStyle(fontSize: 23)),
-                          ],
-                        ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Image.asset('images/settingsimage.png',
+                        width: 70, height: 70),
+                    SizedBox(width: 20),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(nomeColaborador,
+                              style: TextStyle(fontSize: 23)),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
+                ),
                 SizedBox(height: 20),
                 Divider(
                     color: Color.fromRGBO(141, 152, 167, 1.0), thickness: 1.0),

@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:softshares/login/welcomescreen.dart';
 import 'package:softshares/recover/passworddefine.dart';
@@ -62,6 +63,11 @@ void load(ApiService apiService) async {
 }
 
 void main() async {
+  AwesomeNotifications().initialize(null, 
+    [NotificationChannel(channelKey: 'basic_channel', channelName: 'Basic Notification', channelDescription: 'test')],
+  debug: true,
+  );
+
   WidgetsFlutterBinding.ensureInitialized();
   ApiService apiService = ApiService();
   BaseDeDados bd = BaseDeDados();
@@ -74,7 +80,7 @@ void main() async {
     await apiService.downloadCidades();
   } catch (e) {
     print("Erro no main.dart");
-    print('Erro ao transferir os posts: $e');
+    print('Erro ao transferir as cidades: $e');
   }
 
   runApp(MyApp(apiService: apiService, bd: bd, isDarkMode: isDarkMode));
@@ -147,7 +153,7 @@ class _MyAppState extends State<MyApp> {
               '/passworddefine': (context) =>
                   PasswordDefine(api: widget.apiService),
               '/publicacoespage': (context) =>
-                  PostDetailsPage(api: widget.apiService),
+                  PostDetailsPage(api: widget.apiService, event: {}),
               '/welcomescreen': (context) =>
                   WelcomeScreen(api: widget.apiService),
             },

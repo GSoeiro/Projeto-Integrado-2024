@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:softshares/backend/localdb.dart';
 import 'package:softshares/mainarea/calendar.dart';
 import 'package:softshares/other/translations.dart';
@@ -11,7 +11,7 @@ import '../backend/apiservice.dart';
 
 //---------------------- Carregar dados da API ----------------------//
 
-void loadBackend(ApiService apiService) async {
+Future<void> loadBackend(ApiService apiService) async {
   try {
     await apiService.downloadPostsCidade(apiService.cidade);
   } catch (e) {
@@ -288,7 +288,8 @@ class MainPage extends StatefulWidget {
 class _MainPageState extends State<MainPage> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final ScrollController _scrollController = ScrollController();
-  Future<List<Map<String, dynamic>>>? _postsFuture;
+  late Future<List<Map<String, dynamic>>> _postsFuture;
+  bool _isLoading = true;
   List<int> _selectedSubcategorias = [];
   List<int> _selectedCities = [];
 
@@ -309,25 +310,29 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
   return posts;
 }
 
-  @override
+   @override
   void initState() {
     super.initState();
+    _postsFuture = loadPosts();
     _initializeData();
-    //_onRefresh();
   }
 
   Future<void> _initializeData() async {
-    //bool rememberMe = await getRememberMe();
-    loadBackend(widget.api);
+    await loadBackend(widget.api);
     setState(() {
       _postsFuture = loadPosts();
+      _isLoading = false;
     });
   }
 
   Future<void> _onRefresh() async {
+     setState(() {
+      _isLoading = true;  // Define como carregando ao iniciar o refresh
+    });
     loadBackend(widget.api);
     setState(() {
       _postsFuture = loadPosts();
+      _isLoading = false;
     });
   }
 
@@ -526,7 +531,7 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
 
   //---------------------------------Construção da interface principal---------------------------------//
 
-   @override
+ @override
   Widget build(BuildContext context) {
     final ThemeData theme = Theme.of(context);
     return Scaffold(
@@ -551,44 +556,45 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
       ),
       drawer: CustomDrawer(
         bd: widget.bd,
-      onCitiesSelected: (List<int> citiesSelected) {
-        setState(() {
-          _selectedCities = citiesSelected;
-          _postsFuture = loadPosts();
-        });
-      },
-      onSubcategoriasSelected: (List<int> subcategoriasSelecionadas) {
-        setState(() {
-          _selectedSubcategorias = subcategoriasSelecionadas; 
-          _postsFuture = loadPosts(); 
-        });
-      },
+        onCitiesSelected: (List<int> citiesSelected) {
+          setState(() {
+            _selectedCities = citiesSelected;
+            _postsFuture = loadPosts();
+          });
+        },
+        onSubcategoriasSelected: (List<int> subcategoriasSelecionadas) {
+          setState(() {
+            _selectedSubcategorias = subcategoriasSelecionadas;
+            _postsFuture = loadPosts();
+          });
+        },
       ),
-       body: RefreshIndicator(
-        onRefresh: _onRefresh,
-        child: FutureBuilder<List<Map<String, dynamic>>>(
-          future: _postsFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return Center(child: CircularProgressIndicator());
-            } else if (snapshot.hasError) {
-              return Center(child: Text('Error: ${snapshot.error}'));
-            } else if (snapshot.connectionState == ConnectionState.done) {
-              print(snapshot);
-              if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  children: [
-                    Center(child: Text('Não existem publicações disponíveis')),
-                    SizedBox(height: 200),
-                  ],
-                );
-              }
-              return ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  var post = snapshot.data![index];
+      body: _isLoading 
+          ? Center(child: CircularProgressIndicator()) 
+          : RefreshIndicator(
+              onRefresh: _onRefresh,
+              child: FutureBuilder<List<Map<String, dynamic>>>(
+                future: _postsFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator());
+                  } else if (snapshot.hasError) {
+                    return Center(child: Text('Error: ${snapshot.error}'));
+                  } else if (snapshot.hasData && snapshot.data!.isEmpty) {
+                    return ListView(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      children: [
+                        Center(child: Text('Não existem publicações disponíveis')),
+                        SizedBox(height: 200),
+                      ],
+                    );
+                  } else if (snapshot.hasData) {
+                    print(snapshot);
+                    return ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                      itemCount: snapshot.data!.length,
+                      itemBuilder: (context, index) {
+                        var post = snapshot.data![index];
                   return GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/publicacoespage',

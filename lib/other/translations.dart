@@ -67,7 +67,8 @@ class Translations {
       'english': 'Inglês',
       'spanish': 'Espanhol',
       'selected_date': 'Selecione uma data',
-      'date': 'Data'
+      'date': 'Data',
+      'price': 'Preço'
       
     },
     'en': {
@@ -134,6 +135,7 @@ class Translations {
       'spanish': 'Spanish',
       'date': 'Date',
       'selected_date': 'Select a date',
+      'price': 'Price'
     },
     'es': {
       'morning': 'Buenos Dias',
@@ -199,6 +201,7 @@ class Translations {
       'spanish': 'Español',
       'date': 'Fecha',
       'selected_date': 'Seleccione una fecha',
+      'price': 'Precio'
     },
   };
 

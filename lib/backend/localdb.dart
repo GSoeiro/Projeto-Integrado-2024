@@ -203,7 +203,8 @@ class BaseDeDados {
     CREATE TABLE ESPAÇO (
       IDESPACO INTEGER NOT NULL,
       COORDENADAS TEXT NULL,
-      WEBSITE TEXT NULL
+      WEBSITE TEXT NULL,
+      PRECO TEXT NULL
     )
   ''');
 
@@ -212,8 +213,7 @@ class BaseDeDados {
       IDEVENTO INTEGER NOT NULL,
       IDQUESTIONARIO INTEGER NOT NULL,
       DATAEVENTO TEXT NULL,
-      ESTADO INTEGER NOT NULL,
-      PRECO REAL NULL
+      ESTADO INTEGER NOT NULL
     )
   ''');
   }
@@ -541,8 +541,7 @@ class BaseDeDados {
     Database db = await basededados;
 
     if (comentario['DATACOMENTARIO'] is DateTime) {
-      comentario['DATACOMENTARIO'] =
-          formatDateTime(comentario['DATACOMENTARIO']);
+      comentario['DATACOMENTARIO'] = formatDateTime(comentario['DATACOMENTARIO']);
     }
 
     return await db.insert('COMENTARIO', comentario);

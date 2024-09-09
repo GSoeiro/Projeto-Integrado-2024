@@ -1,3 +1,4 @@
+import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:softshares/backend/localdb.dart';
@@ -33,6 +34,11 @@ class _LoginPageState extends State<LoginPage> {
   bool passwordValida = false;
 
   void initState() {
+    AwesomeNotifications().isNotificationAllowed().then((isAllowed){
+      if(!isAllowed){
+        AwesomeNotifications().requestPermissionToSendNotifications();
+      }
+    });
     super.initState();
     setState(() {
       _checkLoginStatus();

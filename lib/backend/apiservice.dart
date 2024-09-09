@@ -392,7 +392,7 @@ Future<void> downloadPostsCidade(int id) async {
             'VIEWS': post['VIEWS'],
           };
 
-          if (post['CIDADE'] == cidade && post['aprovacao']['APROVADA'] == 1) {
+          if (post['aprovacao']['APROVADA'] == 1) {
             await bd.insertPost(publicacoes);
           }
         }
@@ -426,6 +426,7 @@ Future<void> downloadPostsCidade(int id) async {
               'IDESPACO': space['IDESPACO'],
               'COORDENADAS': space['COORDENADAS'],
               'WEBSITE': space['WEBSITE'],
+              'PRECO': space['PRECO']
             };
             bd.insertEspaco(espacos);
           });
@@ -460,7 +461,6 @@ Future<void> downloadPostsCidade(int id) async {
               'IDQUESTIONARIO': event['IDQUESTIONARIO'],
               'DATAEVENTO': formatDateTime(event['DATAEVENTO']),
               'ESTADO': event['ESTADO'],
-              'PRECO': event['PRECO']
             };
             bd.insertEvento(event);
           });
@@ -787,7 +787,7 @@ Future<void> downloadPostsCidade(int id) async {
     }
   }
 
-Future<void> criarEspaco(String cidade, String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem) async {
+Future<void> criarEspaco(String cidade, String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem, String preco,) async {
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
   String coordenadas = '';
 
@@ -812,7 +812,8 @@ Future<void> criarEspaco(String cidade, String titulo, String descricao, String 
       body: json.encode({
         'IDCOLABORADOR': IDCOLABORADOR.toString(),
         'DATAAPROVACAO': formattedDate,
-        'APROVADA': 0
+        'APROVADA': 0,
+        'PRECO': preco
       }),
     );
 

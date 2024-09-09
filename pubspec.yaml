@@ -54,6 +54,7 @@ dependencies:
   flutter_facebook_auth: ^7.0.1
   table_calendar: ^3.0.8
   permission_handler: ^11.0.0
+  awesome_notifications: ^0.9.3+1
 
 dev_dependencies:
   flutter_test:

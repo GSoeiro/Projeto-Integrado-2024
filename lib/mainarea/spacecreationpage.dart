@@ -25,6 +25,7 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
   final TextEditingController _websiteController = TextEditingController();
   final TextEditingController _categoriaController = TextEditingController();
   final TextEditingController _subcategoriaController = TextEditingController();
+  final TextEditingController _precoController = TextEditingController();
 
   File? _image;
   String? imagem;
@@ -65,8 +66,10 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
     String website = _websiteController.text;
     String categoria = _selectedCategoria.toString();
     String subcategoria = _selectedSubCategoria.toString();
+    String preco = _precoController.text;
+    
 
-    await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes);
+    await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes, preco);
   }
 
   @override
@@ -318,6 +321,37 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
                           Navigator.pushNamed(context, '/mapspage');
                         },
                         child: Text(Translations.translate(context, 'map'))),
+                  ),
+                ],
+              ),
+                    Row(
+                children: [
+                  Expanded(
+                    flex: 2,
+                    child: Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: Text(
+                        Translations.translate(context, 'price'),
+                        style: TextStyle(fontSize: 18),
+                        maxLines: 1,
+                      ),
+                    ),
+                  ),
+                  SizedBox(width: 12),
+                  Expanded(
+                    flex: 3,
+                    child: TextFormField(
+                      controller: _precoController,
+                      decoration: InputDecoration(
+                        border: OutlineInputBorder(),
+                        hintText: Translations.translate(context, 'price'),
+                      ),
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                        }
+                        return null;
+                      },
+                    ),
                   ),
                 ],
               ),

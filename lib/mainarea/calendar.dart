@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:softshares/backend/apiservice.dart';
 import 'package:softshares/backend/localdb.dart';
+import 'package:softshares/mainarea/publicacoes.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -97,18 +98,21 @@ for (var evento in postsFinal) {
           selectedDayPredicate: (day) {
             return isSameDay(_selectedDay, day);
           },
-          onDaySelected: (selectedDay, focusedDay) {
-            setState(() {
-              _selectedDay = selectedDay;
-              _focusedDay = focusedDay;
-              if (_events.containsKey(selectedDay)) {
-                Navigator.push(context,MaterialPageRoute(
-                    builder: (context) => EventPage(events: _events[selectedDay]!),
-                  ),
-                );
-              }
-            });
-          },
+         onDaySelected: (selectedDay, focusedDay) {
+  setState(() {
+    _selectedDay = selectedDay;
+    _focusedDay = focusedDay;
+    if (_events.containsKey(selectedDay)) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => PostDetailsPage(api: widget.api, event: {}, 
+          ),
+        ),
+      );
+    }
+  });
+},
           onFormatChanged: (format) {
             setState(() {
               _calendarFormat = format;
