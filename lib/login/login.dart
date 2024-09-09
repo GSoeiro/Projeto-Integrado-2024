@@ -1,16 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/apiservice.dart';
 import '../other/translations.dart';
 
-/*void load(ApiService apiService) async {
-  try {
-    await apiService.downloadPostsCidade(apiService.cidade);
-    print('Posts Transferidos com sucesso no login.dart');
-  } catch (e) {
-    print('Erro ao transferir os posts: $e');
-  }
-}*/
 
 class LoginPage extends StatefulWidget {
   final ApiService api;
@@ -26,6 +19,7 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController passwordController = TextEditingController();
   final TextEditingController novaPasswordController = TextEditingController();
   final TextEditingController confirmarNovaController = TextEditingController();
+  final FlutterSecureStorage secureStorage = FlutterSecureStorage();
   SharedPreferences? prefs;
   int? mudouPassword = 0;
   bool rememberMe = false;
@@ -128,21 +122,11 @@ class _LoginPageState extends State<LoginPage> {
 
   void _checkLoginStatus() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    bool? rememberme = prefs.getBool('rememberMe');
+    String? token = await secureStorage.read(key: 'auth_token');
     int? cidade = prefs.getInt('cidade');
 
-    if (rememberme == true && cidade != null) {
-      try {
-        /*print("Erro antes de transferir posts");
-        await widget.api.downloadPostsCidade(cidade);
-        print("Posts transferidos com sucesso com lembrarme");*/
-
-        if (mounted) {
-          Navigator.pushReplacementNamed(context, '/welcomescreen');
-        }
-      } catch (e) {
-        print('Erro ao transferir os posts: $e');
-      }
+    if (token !=null  && cidade != null) {
+      Navigator.pushReplacementNamed(context, '/welcomescreen');
     } else {
       print("Usuário não está logado ou cidade não encontrada.");
     }
@@ -393,7 +377,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       int IDColaborador = await widget.api.loginUserOnBackend(emailController.text, passwordController.text);
 
-      if (IDColaborador != 0) {
+      if (IDColaborador != 0 ) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         mudouPassword = await prefs.getInt('mudoupassword');
 
@@ -401,15 +385,15 @@ class _LoginPageState extends State<LoginPage> {
           String? nomeColaborador = await widget.api.nomeColaborador;
           await prefs.setInt('IDColaborador', IDColaborador);
           await prefs.setString('nomeColaborador', nomeColaborador ?? '');
-          //await prefs.setBool('rememberMe', rememberMe);
 
-          /*if (rememberMe) {
-            await prefs.setBool('rememberMe', true);
+          if (rememberMe) {
+            await secureStorage.write(key: 'auth_token', value: 'your_auth_token_here');
           } else {
-            await prefs.remove('isLoggedIn');
-          }*/
+            await secureStorage.delete(key: 'auth_token');
+          }
 
           if (mounted) {
+            
             Navigator.pushReplacementNamed(context, '/welcomescreen');
           }
         } else {

@@ -29,7 +29,7 @@ class _SettingsPageState extends State<SettingsPage> {
   Future<void> _loadPreferences() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
-      _isDarkMode = prefs.getBool('isDarkMode') ?? false;
+      _isDarkMode = prefs.getBool('isDarkMode') ?? false; 
       String? savedLanguage = prefs.getString('languageCode');
       if (savedLanguage != null) {
         Provider.of<LocaleProvider>(context, listen: false)
@@ -59,6 +59,9 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.remove('languageCode');
     widget.onThemeToggle();
     Navigator.pushReplacementNamed(context, '/loginpage');
+    setState(() {
+      _isDarkMode = false;
+    });
   }
 
   void _changeLanguage(String languageCode) async {
@@ -205,3 +208,4 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 }
+

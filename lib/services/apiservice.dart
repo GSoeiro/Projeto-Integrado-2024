@@ -686,6 +686,7 @@ Future<void> downloadPostsCidade(int id) async {
               'DATACOMENTARIO': formatDateTime(comment['DATACOMENTARIO']),
               'AVALIACAO': comment['AVALIACAO'],
               'TEXTO': comment['TEXTO'],
+              'RATING': comment['RATING'],
             };
 
             bd.insertComentario(comentarios);
@@ -865,7 +866,7 @@ Future<void> downloadPostsCidade(int id) async {
     }
   }
 
-Future<void> criarEspaco(String cidade, String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem, String preco,) async {
+Future<void> criarEspaco(String cidade, String titulo, String descricao, String website, String categoria, String subcategoria, Uint8List? pathimagem, String preco) async {
   String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
   String coordenadas = '';
 
@@ -877,6 +878,7 @@ Future<void> criarEspaco(String cidade, String titulo, String descricao, String 
   Map<String, dynamic> datapost_espaco = {
     'COORDENADAS': coordenadas,
     'WEBSITE': website,
+    'PRECO': preco
   };
 
   try {
@@ -891,11 +893,11 @@ Future<void> criarEspaco(String cidade, String titulo, String descricao, String 
         'IDCOLABORADOR': IDCOLABORADOR.toString(),
         'DATAAPROVACAO': formattedDate,
         'APROVADA': 0,
-        'PRECO': preco
+  
       }),
     );
 
-    print('Resposta Aprovacao: ${responseAprovacao.body}'); // Log da resposta de aprovação
+    print('Resposta Aprovacao: ${responseAprovacao.body}'); 
 
     if (responseAprovacao.statusCode == 200) {
       var responseDataAprovacao = json.decode(responseAprovacao.body);

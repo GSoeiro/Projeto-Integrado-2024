@@ -51,12 +51,10 @@ dependencies:
   path_provider:
   share_plus: ^10.0.0
   google_sign_in: ^6.2.1
-  flutter_facebook_auth: ^7.0.1
   table_calendar: ^3.0.8
   permission_handler: ^11.0.0
   awesome_notifications: ^0.9.3+1
-  firebase_core: ^2.32.0
-  firebase_auth: ^5.2.0
+  flutter_secure_storage: ^8.0.0
 
 dev_dependencies:
   flutter_test:

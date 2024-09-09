@@ -69,45 +69,34 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
     String categoria = _selectedCategoria.toString();
     String subcategoria = _selectedSubCategoria.toString();
     String preco = _precoController.text;
-    
-    try{
-      await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria, imageBytes, preco);
 
-        AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: 10,
-          channelKey: 'space_channel',
-          title: 'Novo Espaço Criado',
-          body: '$titulo',
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
-    
+try {
+  await widget.api.criarEspaco(cidade, titulo, _descricaoController.text, website, categoria, subcategoria,imageBytes, preco);
 
-    Fluttertoast.showToast(
-      msg: "Espaço criado com sucesso!",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.CENTER,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Colors.green,
-      textColor: Colors.white,
-      fontSize: 16.0
-    );
+  Fluttertoast.showToast(
+    msg: "Espaço criado com sucesso!",
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.CENTER,
+    timeInSecForIosWeb: 1,
+    backgroundColor: Colors.green,
+    textColor: Colors.white,
+    fontSize: 16.0
+  );
 
-    // Navega de volta para a página principal
-    Navigator.pushReplacementNamed(context, '/mainpage');
-  } catch (e) {
-    Fluttertoast.showToast(
-      msg: "Erro ao criar o espaço.",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.CENTER,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 16.0
-    );
-    print('Erro ao criar espaço: $e');
-  }
+  Navigator.pushReplacementNamed(context, '/mainpage');
+} catch (e) {
+  // Exibe um toast de erro
+  Fluttertoast.showToast(
+    msg: "Erro ao criar o espaço.",
+    toastLength: Toast.LENGTH_SHORT,
+    gravity: ToastGravity.CENTER,
+    timeInSecForIosWeb: 1,
+    backgroundColor: Colors.red,
+    textColor: Colors.white,
+    fontSize: 16.0
+  );
+  print('Erro ao criar espaço: $e');
+}
 }   
 
   @override
@@ -362,7 +351,8 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
                   ),
                 ],
               ),
-                    Row(
+              SizedBox(width: 30),
+              Row(
                 children: [
                   Expanded(
                     flex: 2,

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:http/http.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:share_plus/share_plus.dart';
@@ -625,11 +626,41 @@ class _ComentarioCardState extends State<ComentarioCard> {
           ),
           actions: [
             TextButton(
-              onPressed: () async{
-                await widget.api.denunciar(idcomentario, textoDenunciarController.text, cidade);
-              },
-              child: const Text("Denunciar"),
-            ),
+  onPressed: () async {
+    try {
+      // Chama a função de denúncia
+      await widget.api.denunciar(
+        idcomentario, 
+        textoDenunciarController.text, 
+        widget.cidade,
+      );
+  
+      Fluttertoast.showToast(
+        msg: "Denúncia realizada com sucesso!",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.green,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    
+      Navigator.pop(context);
+    } catch (e) {
+      Fluttertoast.showToast(
+        msg: "Erro ao realizar denúncia. Tente novamente.",
+        toastLength: Toast.LENGTH_SHORT,
+        gravity: ToastGravity.BOTTOM,
+        timeInSecForIosWeb: 1,
+        backgroundColor: Colors.red,
+        textColor: Colors.white,
+        fontSize: 16.0,
+      );
+    }
+  },
+  child: const Text("Denunciar"),
+),
+
           ],
         );
       },
@@ -655,14 +686,12 @@ class _ComentarioCardState extends State<ComentarioCard> {
     super.initState();
     print(widget.comentario['AVALIACAO']);
     rating = widget.comentario['AVALIACAO'] ?? 0;
+    print(rating);
     print("Cenas");
   }
 
   @override
   Widget build(BuildContext context) {
-
-    //final post = widget.post;
-
     if (widget.comentario['APROVADO'] != 1) {
       return SizedBox.shrink();
     }
@@ -674,7 +703,6 @@ class _ComentarioCardState extends State<ComentarioCard> {
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Cabeçalho do comentário (nome e data com botão de denunciar)
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
@@ -704,51 +732,67 @@ class _ComentarioCardState extends State<ComentarioCard> {
           ],
         ),
         SizedBox(height: 8.0),
+        // Linha com o texto à esquerda e a avaliação à direita
         Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: buildRatingStars(widget.comentario['AVALIACAO']),
-        ),
-        if (widget.comentario['TEXTO'] != '')
-          Padding(
-            padding: const EdgeInsets.only(top: 8.0),
-            child: Text(
-              widget.comentario['TEXTO'] ?? 'Erro',
-              style: TextStyle(
-                fontSize: 14.0,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Texto do comentário alinhado à esquerda
+            if (widget.comentario['TEXTO'] != '')
+              Expanded(
+                child: Text(
+                  widget.comentario['TEXTO'] ?? 'Erro',
+                  style: TextStyle(
+                    fontSize: 14.0,
+                  ),
+                  maxLines: 2, // Limita as linhas do texto, se necessário
+                  overflow: TextOverflow.ellipsis, // Reticências se o texto for longo
+                ),
               ),
-            ),
-          ),
-       SizedBox(height: 16.0),
-            // Seção de upvote e downvote
+            // Estrelas de avaliação alinhadas à direita
             Row(
-              mainAxisAlignment: MainAxisAlignment.start,
-              children: [
-                IconButton(
-                  onPressed: () async{
-                    await widget.api.updateRatingComentario(widget.comentario['IDCOMENTARIO'], widget.comentario['AVALIACAO']+1);
-                    setState(() {
-                      rating = widget.comentario['AVALIACAO']+1;
-                    });
-                  },
-                  icon: Icon(Icons.thumb_up, color: Colors.green),
-                ),
-                Text(widget.comentario['AVALIACAO']),
-                SizedBox(width: 16.0),
-                IconButton(
-                 onPressed: () async{
-                    await widget.api.updateRatingComentario(widget.comentario['IDCOMENTARIO'],widget.comentario['AVALIACAO']-1);
-                    setState(() {
-                      rating = widget.comentario['AVALIACAO']-1;
-                    });
-                  },
-                  icon: Icon(Icons.thumb_down, color: Colors.red),
-                ),
-              ],
+              children: buildRatingStars(widget.comentario['AVALIACAO']),
             ),
+          ],
+        ),
+        SizedBox(height: 16.0),
+        // Seção de upvote e downvote
+        Row(
+          mainAxisAlignment: MainAxisAlignment.start,
+          children: [
+            IconButton(
+              onPressed: () async {
+                await widget.api.updateRatingComentario(
+                  widget.comentario['IDCOMENTARIO'],
+                  widget.comentario['RATING'] + 1,
+                );
+                setState(() {
+                  rating = widget.comentario['RATING'] + 1;
+                });
+              },
+              icon: Icon(Icons.thumb_up, color: Colors.green),
+            ),
+            Text(widget.comentario['RATING'].toString()), // Mostra o rating corrigido
+            SizedBox(width: 16.0),
+            IconButton(
+              onPressed: () async {
+                await widget.api.updateRatingComentario(
+                  widget.comentario['IDCOMENTARIO'],
+                  widget.comentario['RATING'] - 1,
+                );
+                setState(() {
+                  rating = widget.comentario['RATING'] - 1;
+                });
+              },
+              icon: Icon(Icons.thumb_down, color: Colors.red),
+            ),
+          ],
+        ),
       ],
     ),
   ),
 );
+
+
   }
 }
 
