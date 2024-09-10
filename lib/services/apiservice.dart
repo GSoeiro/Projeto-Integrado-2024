@@ -8,6 +8,8 @@ import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:softshares/services/localdb.dart';
 import 'package:sqflite/sqflite.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server.dart';
 
 class ApiService {
   static const String apiUrl =
@@ -373,6 +375,7 @@ Future<void> downloadPostsCidade(int id) async {
             'APROVACAO': post['APROVACAO'],
             'COLABORADOR': post['COLABORADOR'],
             'NOMECOLABORADOR': post['colaborador']['NOME'],
+            'EMAILCOLABORADOR': post['colaborador']['EMAIL'],
             'CATEGORIA': post['CATEGORIA'],
             'NOMECATEGORIA': post['categorium']['NOME'],
             'SUBCATEGORIA': post['SUBCATEGORIA'],
@@ -390,6 +393,7 @@ Future<void> downloadPostsCidade(int id) async {
             'COORDENADAS': post['espaco']?['COORDENADAS'],
             'WEBSITE': post['espaco']?['WEBSITE'],
             'VIEWS': post['VIEWS'],
+            'PRECO': post['espaco']['PRECO'],
           };
           }else{
             publicacoes = {
@@ -399,6 +403,7 @@ Future<void> downloadPostsCidade(int id) async {
             'APROVACAO': post['APROVACAO'],
             'COLABORADOR': post['COLABORADOR'],
             'NOMECOLABORADOR': post['colaborador']['NOME'],
+            'EMAILCOLABORADOR': post['colaborador']['EMAIL'],
             'CATEGORIA': post['CATEGORIA'],
             'NOMECATEGORIA': post['categorium']['NOME'],
             'SUBCATEGORIA': post['SUBCATEGORIA'],
@@ -416,9 +421,13 @@ Future<void> downloadPostsCidade(int id) async {
             'COORDENADAS': post['espaco']?['COORDENADAS'],
             'WEBSITE': post['espaco']?['WEBSITE'],
             'VIEWS': post['VIEWS'],
+            'PRECO':'0',
           };
+
           }
           if (post['aprovacao']['APROVADA'] == 1) {
+            print('DownloadPosts');
+            print(publicacoes);
             await bd.insertPost(publicacoes);
           }
         }
@@ -722,7 +731,7 @@ Future<void> downloadPostsCidade(int id) async {
     return 1;
   }
 
-  Future<int> comentar(String idpost, String avaliacao, String texto) async {
+  Future<int> comentar(String idpost, double avaliacao, String texto) async {
     String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     var response;
     try {
@@ -839,7 +848,7 @@ Future<void> downloadPostsCidade(int id) async {
   }
 
 
-  Future<int> votar(int IDOPCOESESCOLHA) async {
+  Future<int> votar(int IDOPCOESESCOLHA, Map<String, dynamic> post, String opcao) async {
     String formattedDate = DateFormat('dd-MM-yyyy').format(DateTime.now());
     try {
       var response = await http.post(
@@ -851,10 +860,28 @@ Future<void> downloadPostsCidade(int id) async {
         body: json.encode({
           'IDCOLABORADOR': IDCOLABORADOR,
           'DATAVOTO': formattedDate,
-          'IDOPCOESESCOLHA': IDOPCOESESCOLHA
+          'IDOPCOESESCOLHA': IDOPCOESESCOLHA,
         }),
       );
       if (response.statusCode == 200 || response.statusCode == 204) {
+
+    String username = 'pintsoftshares24@gmail.com';
+    String password = 'atmf bhjb cels kcgp';
+
+    final smtpServer = gmail(username, password);
+    print(smtpServer);
+    final message = Message()
+      ..from = Address(username, 'SoftShares')
+      ..recipients.add(post['EMAILCOLABORADOR'])
+      ..subject = 'Novo voto na sua atividade/evento'
+      ..text ='O colaborador $nomeColaborador votou na sua atividade/evento na opção $opcao';
+  print(message);
+    try {
+      final sendReport = await send(message, smtpServer);
+      print('Email enviado: ' + sendReport.toString());
+    } on MailerException catch (e) {
+      print('Email não enviado. ${e.toString()}');
+    }
         return 1;
       } else {
         print('HTTP Error: ${response.statusCode}, ${response.body}');

@@ -65,13 +65,14 @@ class _RegisterPageState extends State<RegisterPage> {
     String password = 'atmf bhjb cels kcgp';
 
     final smtpServer = gmail(username, password);
+    print(smtpServer);
     final message = Message()
       ..from = Address(username, 'SoftShares')
       ..recipients.add(email)
       ..subject = 'A sua palavra-passe temporária!'
       ..text =
           'Bem vindo à SoftShares! A sua palavra-passe temporária é: $passwordTemporaria.';
-
+  print(message);
     try {
       final sendReport = await send(message, smtpServer);
       print('Email enviado: ' + sendReport.toString());

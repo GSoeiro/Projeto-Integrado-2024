@@ -53,7 +53,6 @@ dependencies:
   google_sign_in: ^6.2.1
   table_calendar: ^3.0.8
   permission_handler: ^11.0.0
-  awesome_notifications: ^0.9.3+1
   flutter_secure_storage: ^8.0.0
 
 dev_dependencies:

@@ -1,4 +1,3 @@
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:softshares/login/welcomescreen.dart';
 import 'package:softshares/recover/passworddefine.dart';
@@ -64,26 +63,6 @@ void load(ApiService apiService) async {
 
 void main() async {
 
-  AwesomeNotifications().initialize(
-    null,
-    [
-      NotificationChannel(
-        channelKey: 'events_channel',
-        channelName: 'Notificação de Eventos',
-        channelDescription: 'Notificações de eventos',
-        defaultColor: Color(0xFF9D50DD),
-        ledColor: Colors.white,
-      ),
-      NotificationChannel(
-        channelKey: 'spaces_channel',
-        channelName: 'Notificação de Espaços',
-        channelDescription: 'Notificações de Espaços',
-        defaultColor: Color(0xFF9D50DD),
-        ledColor: Colors.white,
-      )
-    ],
-  );
-  AwesomeNotifications().requestPermissionToSendNotifications();
   WidgetsFlutterBinding.ensureInitialized();
   ApiService apiService = ApiService();
   BaseDeDados bd = BaseDeDados();
@@ -121,13 +100,6 @@ class _MyAppState extends State<MyApp> {
     super.initState();
     _isDarkMode = widget.isDarkMode;
     load(widget.apiService);
-     AwesomeNotifications().requestPermissionToSendNotifications().then((granted) {
-      if (granted) {
-        print('Permissão para notificações concedida');
-      } else {
-        print('Permissão para notificações negada');
-      }
-    });
   }
 
   void _toggleTheme() {

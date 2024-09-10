@@ -32,7 +32,7 @@ class BaseDeDados {
       path,
       version: versao,
       onCreate: _onCreate,
-      //onUpgrade: _onUpgrade,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -109,6 +109,7 @@ class BaseDeDados {
       APROVACAO INTEGER NULL,
       COLABORADOR INTEGER NULL,
       NOMECOLABORADOR TEXT NULL,
+      EMAILCOLABORADOR STRING NOT NULL,
       CATEGORIA INTEGER NULL,
       NOMECATEGORIA TEXT NULL,
       SUBCATEGORIA INTEGER NULL,
@@ -125,7 +126,8 @@ class BaseDeDados {
       DATAEVENTO TEXT NULL,
       COORDENADAS TEXT NULL,
       WEBSITE TEXT NULL,
-      VIEWS INTEGER NULL
+      VIEWS INTEGER NULL,
+      PRECO TEXT NULL
     )
   ''');
 

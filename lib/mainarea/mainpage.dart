@@ -1,6 +1,5 @@
 import 'dart:io';
 import 'dart:ui';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:flutter/material.dart';
 import 'package:softshares/services/localdb.dart';
 import 'package:softshares/mainarea/calendar.dart';
@@ -589,13 +588,14 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
                       ],
                     );
                   } else if (snapshot.hasData) {
-                    print(snapshot);
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
                         var post = snapshot.data![index];
-                  return GestureDetector(
+                        print('Publicacoes');
+                        print(post);
+                    return GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/publicacoespage',
                           arguments: post);
@@ -619,6 +619,12 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
                           SizedBox(height: 5),
                           Text(
                             '${post['NOMECATEGORIA'] ?? 'Não existe categoria'} - ${post['NOMESUBCATEGORIA'] ?? 'Não existe subcategoria'}',
+                            style: TextStyle(
+                                fontSize: 14, color: theme.disabledColor),
+                          ),
+                          SizedBox(height: 5),
+                          Text(
+                            'Cidade: ${post['NOMECIDADE'] ?? 'Não existe cidade'}',
                             style: TextStyle(
                                 fontSize: 14, color: theme.disabledColor),
                           ),

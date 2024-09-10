@@ -1,8 +1,6 @@
 import 'dart:io';
 import 'dart:typed_data';
-import 'package:awesome_notifications/awesome_notifications.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
@@ -30,7 +28,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
   final TextEditingController _subcategoriaController = TextEditingController();
   List<FormItem> formItems = List.generate(2, (index) => FormItem()); 
   String cidadeColaborador = '';
-
+  String? imagem;
   File? _image;
   Uint8List? imageBytes;
   final picker = ImagePicker();
@@ -40,31 +38,20 @@ class _EventcreationpageState extends State<Eventcreationpage> {
   int? _selectedCidade;
   DateTime? _selectedDate;
 
-
-Future<void> _pickImage() async {
-  final permissionStatus = await Permission.photos.request();
-
-  if (permissionStatus.isGranted) {
+  Future<void> _pickImage() async {
     XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
     if (pickedFile != null) {
-      _image = File(pickedFile.path);
       imageBytes = await pickedFile.readAsBytes();
     } else {
+      imagem = null;
       _image = null;
-      imageBytes = null;
     }
-
     setState(() {});
-  } else if (permissionStatus.isDenied) {
-    // Handle the case when permission is denied
-    print('Permission denied. Please grant access to the gallery.');
-  } else if (permissionStatus.isPermanentlyDenied) {
-    // Handle the case when permission is permanently denied
-    print('Permission permanently denied. Please grant access from settings.');
-    openAppSettings();
   }
-}
+
+
+
 
   Future<void> _loadCidadeColaborador() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
@@ -115,16 +102,6 @@ Future<void> _pickImage() async {
   
   try {
     await widget.api.criarEvento(cidade, titulo, descricao, categoria, subcategoria, imageBytes, opcoes, parsedDate);
-
-      AwesomeNotifications().createNotification(
-        content: NotificationContent(
-          id: 10,
-          channelKey: 'events_channel',
-          title: 'Novo Evento Na Sua Cidade',
-          body: '$titulo',
-          notificationLayout: NotificationLayout.BigText,
-        ),
-      );
     
 
     Fluttertoast.showToast(

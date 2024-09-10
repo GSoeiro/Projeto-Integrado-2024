@@ -2,7 +2,6 @@ import 'dart:io';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:http/http.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
@@ -64,8 +63,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
- 
-
   Future<void> _launchWebsite(String url) async {
     if (await canLaunch(url)) {
       await launch(url);
@@ -75,7 +72,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   List<Widget> _buildVotingOptions(
-      List<dynamic> listaopcoes, List<dynamic> listavotos) {
+      List<dynamic> listaopcoes, List<dynamic> listavotos, Map<String, dynamic> post) {
     int totalVotos = 0;
     int jaVotou = 0;
 
@@ -117,7 +114,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
       } else {
         return GestureDetector(
           onTap: () async {
-            widget.api.votar(opcao['IDOPCAO']);
+            widget.api.votar(opcao['IDOPCAO'], post, opcao['NOME']);
             _update();
           },
           child: Column(
@@ -155,6 +152,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
         print('Error decoding image: $e');
         imageBytes = Uint8List(0);
       }
+
 
       if (post['EVENTO'] == 1) {
         //Evento é espaço
@@ -196,6 +194,13 @@ class PostDetailsPageState extends State<PostDetailsPage> {
             )
           ]),
           SizedBox(height: 10),
+          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
+            Text(
+              'Preço Médio: ${post['PRECO']  ?? 'Não existe preço'}€',
+              style: TextStyle(fontSize: 15, color: theme.disabledColor),
+            )
+          ]),
+          SizedBox(height: 10),
           post['IMAGEM'] != 'semimagem'
               ? MyImageWidget(post: post)
               : SizedBox(height: 10),
@@ -222,7 +227,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
               } else if (snapshot.hasData) {
                 var listaComentarios = snapshot.data ?? [];
                 return Column(
-                  children: _buildComentarios(listaComentarios, post) ,
+                  children: _buildComentarios(listaComentarios, post),
                 );
               } else {
                 List<dynamic> comentarios = snapshot.data!;
@@ -330,7 +335,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                     SizedBox(height: 20),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: _buildVotingOptions(listaopcoes, listavotos),
+                      children: _buildVotingOptions(listaopcoes, listavotos, post),
                     ),
                     SizedBox(height: 20),
                     _criarComentario(post),
@@ -426,8 +431,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-
-
   Widget _criarComentario(Map<String, dynamic> post) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,8 +474,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           children: [
             ElevatedButton(
               onPressed: () async {
-                await widget.api.comentar(post['IDPUBLICACAO'].toString(),
-                    avaliacaoEstrelas.toString(), comentarController.text);
+                await widget.api.comentar(post['IDPUBLICACAO'].toString(), avaliacaoEstrelas.toDouble(), comentarController.text);
                 setState(() {
                   comentarioCriado = 0;
                 });
@@ -502,18 +504,16 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     );
   }
 
-  List<Widget> _buildComentarios(List<dynamic> listaComentarios, Map<String, dynamic> post) {
+  List<Widget> _buildComentarios(
+      List<dynamic> listaComentarios, Map<String, dynamic> post) {
     return listaComentarios.map((comentario) {
       if (comentario is List && comentario.isNotEmpty) {
         comentario = comentario[0];
       }
       if (comentario is Map<String, dynamic>) {
         if (comentario['APROVADO'] == 1) {
-          print(comentario);
-          print(comentario['IDCOMENTARIO']);
-          print(post);
-          print(post['CIDADE']);
-          return ComentarioCard(comentario: comentario, cidade: post['CIDADE'], api: widget.api);
+          return ComentarioCard(
+              comentario: comentario, cidade: post['CIDADE'], api: widget.api);
         } else {
           return Padding(
             padding: const EdgeInsets.symmetric(vertical: 8.0),
@@ -557,10 +557,12 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     return [listaopcoes, listavotos];
   }
 
-  Future<List<dynamic>> downloadComentariosPublicacoes(Map<String, dynamic> post) async {
+  Future<List<dynamic>> downloadComentariosPublicacoes(
+      Map<String, dynamic> post) async {
     List<dynamic> listaComentarios;
     try {
-      listaComentarios = await widget.api.downloadComentarios(post['IDPUBLICACAO']);
+      listaComentarios =
+          await widget.api.downloadComentarios(post['IDPUBLICACAO']);
     } catch (e) {
       print("Erro ao baixar os comentários: $e");
       return [];
@@ -578,7 +580,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
 
     try {
       await widget.api.updateRatingPost(post['IDPUBLICACAO'], resultadoFinal);
-      print("Rating atualizado com sucesso.");
     } catch (e) {
       print("Erro ao atualizar o rating: $e");
     }
@@ -586,13 +587,13 @@ class PostDetailsPageState extends State<PostDetailsPage> {
   }
 }
 
-
 class ComentarioCard extends StatefulWidget {
   final Map<String, dynamic> comentario;
   final int cidade;
   final ApiService api;
 
-  ComentarioCard({required this.comentario, required this.cidade, required this.api});
+  ComentarioCard(
+      {required this.comentario, required this.cidade, required this.api});
 
   @override
   _ComentarioCardState createState() => _ComentarioCardState();
@@ -604,7 +605,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
   bool hasDownvoted = false;
   TextEditingController textoDenunciarController = TextEditingController();
 
-   void _denunciarPopUp(int idcomentario, int cidade) {
+  void _denunciarPopUp(int idcomentario, int cidade) {
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -618,56 +619,54 @@ class _ComentarioCardState extends State<ComentarioCard> {
                 minLines: 1,
                 maxLines: 6,
                 controller: textoDenunciarController,
-                decoration: InputDecoration(
-                    hintText: 'Motivo da denuncia'),
+                decoration: InputDecoration(hintText: 'Motivo da denuncia'),
                 obscureText: false,
               ),
             ],
           ),
           actions: [
             TextButton(
-  onPressed: () async {
-    try {
-      // Chama a função de denúncia
-      await widget.api.denunciar(
-        idcomentario, 
-        textoDenunciarController.text, 
-        widget.cidade,
-      );
-  
-      Fluttertoast.showToast(
-        msg: "Denúncia realizada com sucesso!",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.green,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    
-      Navigator.pop(context);
-    } catch (e) {
-      Fluttertoast.showToast(
-        msg: "Erro ao realizar denúncia. Tente novamente.",
-        toastLength: Toast.LENGTH_SHORT,
-        gravity: ToastGravity.BOTTOM,
-        timeInSecForIosWeb: 1,
-        backgroundColor: Colors.red,
-        textColor: Colors.white,
-        fontSize: 16.0,
-      );
-    }
-  },
-  child: const Text("Denunciar"),
-),
+              onPressed: () async {
+                try {
+                  // Chama a função de denúncia
+                  await widget.api.denunciar(
+                    idcomentario,
+                    textoDenunciarController.text,
+                    widget.cidade,
+                  );
 
+                  Fluttertoast.showToast(
+                    msg: "Denúncia realizada com sucesso!",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.green,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
+
+                  Navigator.pop(context);
+                } catch (e) {
+                  Fluttertoast.showToast(
+                    msg: "Erro ao realizar denúncia. Tente novamente.",
+                    toastLength: Toast.LENGTH_SHORT,
+                    gravity: ToastGravity.BOTTOM,
+                    timeInSecForIosWeb: 1,
+                    backgroundColor: Colors.red,
+                    textColor: Colors.white,
+                    fontSize: 16.0,
+                  );
+                }
+              },
+              child: const Text("Denunciar"),
+            ),
           ],
         );
       },
     );
   }
 
-    List<Widget> buildRatingStars(int rating) {
+  List<Widget> buildRatingStars(int rating) {
     List<Widget> stars = [];
     for (int i = 1; i <= 5; i++) {
       stars.add(
@@ -684,10 +683,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
   @override
   void initState() {
     super.initState();
-    print(widget.comentario['AVALIACAO']);
     rating = widget.comentario['AVALIACAO'] ?? 0;
-    print(rating);
-    print("Cenas");
   }
 
   @override
@@ -695,104 +691,163 @@ class _ComentarioCardState extends State<ComentarioCard> {
     if (widget.comentario['APROVADO'] != 1) {
       return SizedBox.shrink();
     }
-
-  return Card(
-  margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
-  child: Padding(
-    padding: EdgeInsets.all(16.0),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              widget.comentario['NOMECOLABORADOR'] ?? 'Erro',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                color: Colors.blue,
-              ),
-            ),
-            Row(
-              children: [
-                Text(
-                  widget.comentario['DATACOMENTARIO'] ?? 'Erro',
-                  style: TextStyle(
-                    color: Colors.grey,
+    if (widget.comentario['TEXTO'] != '') {
+      return Card(
+        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.comentario['NOMECOLABORADOR'] ?? 'Erro',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
                   ),
-                ),
-                IconButton(
-                  onPressed: () {
-                    _denunciarPopUp(widget.comentario['IDCOMENTARIO'], widget.cidade);
-                  },
-                  icon: Icon(Icons.flag, color: Colors.red),
-                ),
-              ],
-            ),
-          ],
-        ),
-        SizedBox(height: 8.0),
-        // Linha com o texto à esquerda e a avaliação à direita
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            // Texto do comentário alinhado à esquerda
-            if (widget.comentario['TEXTO'] != '')
-              Expanded(
-                child: Text(
-                  widget.comentario['TEXTO'] ?? 'Erro',
-                  style: TextStyle(
-                    fontSize: 14.0,
+                  Row(
+                    children: [
+                      Text(
+                        widget.comentario['DATACOMENTARIO'] ?? 'Erro',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: () {
+                          _denunciarPopUp(
+                              widget.comentario['IDCOMENTARIO'], widget.cidade);
+                        },
+                        icon: Icon(Icons.flag, color: Colors.red),
+                      ),
+                    ],
                   ),
-                  maxLines: 2, // Limita as linhas do texto, se necessário
-                  overflow: TextOverflow.ellipsis, // Reticências se o texto for longo
-                ),
+                ],
               ),
-            // Estrelas de avaliação alinhadas à direita
-            Row(
-              children: buildRatingStars(widget.comentario['AVALIACAO']),
-            ),
-          ],
+              SizedBox(height: 8.0),
+              // Linha com o texto à esquerda e a avaliação à direita
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Texto do comentário alinhado à esquerda
+                  if (widget.comentario['TEXTO'] != '')
+                    Expanded(
+                      child: Text(
+                        widget.comentario['TEXTO'] ?? 'Erro',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                        ),
+                        maxLines: 2, // Limita as linhas do texto, se necessário
+                        overflow: TextOverflow
+                            .ellipsis, // Reticências se o texto for longo
+                      ),
+                    ),
+                  // Estrelas de avaliação alinhadas à direita
+                  Row(
+                    children: buildRatingStars(widget.comentario['AVALIACAO']),
+                  ),
+                ],
+              ),
+              SizedBox(height: 16.0),
+              // Seção de upvote e downvote
+              Row(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  IconButton(
+                    onPressed: () async {
+                      await widget.api.updateRatingComentario(
+                        widget.comentario['IDCOMENTARIO'],
+                        widget.comentario['RATING'] + 1,
+                      );
+                      setState(() {
+                        rating = widget.comentario['RATING'] + 1;
+                      });
+                    },
+                    icon: Icon(Icons.thumb_up, color: Colors.green),
+                  ),
+                  Text(widget.comentario['RATING']
+                      .toString()), // Mostra o rating corrigido
+                  SizedBox(width: 16.0),
+                  IconButton(
+                    onPressed: () async {
+                      await widget.api.updateRatingComentario(
+                        widget.comentario['IDCOMENTARIO'],
+                        widget.comentario['RATING'] - 1,
+                      );
+                      setState(() {
+                        rating = widget.comentario['RATING'] - 1;
+                      });
+                    },
+                    icon: Icon(Icons.thumb_down, color: Colors.red),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-        SizedBox(height: 16.0),
-        // Seção de upvote e downvote
-        Row(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: [
-            IconButton(
-              onPressed: () async {
-                await widget.api.updateRatingComentario(
-                  widget.comentario['IDCOMENTARIO'],
-                  widget.comentario['RATING'] + 1,
-                );
-                setState(() {
-                  rating = widget.comentario['RATING'] + 1;
-                });
-              },
-              icon: Icon(Icons.thumb_up, color: Colors.green),
-            ),
-            Text(widget.comentario['RATING'].toString()), // Mostra o rating corrigido
-            SizedBox(width: 16.0),
-            IconButton(
-              onPressed: () async {
-                await widget.api.updateRatingComentario(
-                  widget.comentario['IDCOMENTARIO'],
-                  widget.comentario['RATING'] - 1,
-                );
-                setState(() {
-                  rating = widget.comentario['RATING'] - 1;
-                });
-              },
-              icon: Icon(Icons.thumb_down, color: Colors.red),
-            ),
-          ],
+      );
+    } else {
+      return Card(
+        margin: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        child: Padding(
+          padding: EdgeInsets.all(16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    widget.comentario['NOMECOLABORADOR'] ?? 'Erro',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.blue,
+                    ),
+                  ),
+                  Row(
+                    children: [
+                      Text(
+                        widget.comentario['DATACOMENTARIO'] ?? 'Erro',
+                        style: TextStyle(
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              SizedBox(height: 8.0),
+              // Linha com o texto à esquerda e a avaliação à direita
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  // Texto do comentário alinhado à esquerda
+                  if (widget.comentario['TEXTO'] != '')
+                    Expanded(
+                      child: Text(
+                        widget.comentario['TEXTO'] ?? 'Erro',
+                        style: TextStyle(
+                          fontSize: 14.0,
+                        ),
+                        maxLines: 2, // Limita as linhas do texto, se necessário
+                        overflow: TextOverflow
+                            .ellipsis, // Reticências se o texto for longo
+                      ),
+                    ),
+                  // Estrelas de avaliação alinhadas à direita
+                  Row(
+                    children: buildRatingStars(widget.comentario['AVALIACAO']),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ],
-    ),
-  ),
-);
-
-
+      );
+    }
   }
 }
-
