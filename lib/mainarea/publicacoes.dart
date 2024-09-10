@@ -1,6 +1,4 @@
 import 'dart:io';
-import 'package:flutter/cupertino.dart';
-import 'package:flutter/widgets.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:share_plus/share_plus.dart';
@@ -71,8 +69,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-  List<Widget> _buildVotingOptions(
-      List<dynamic> listaopcoes, List<dynamic> listavotos, Map<String, dynamic> post) {
+  List<Widget> _buildVotingOptions(List<dynamic> listaopcoes,
+      List<dynamic> listavotos, Map<String, dynamic> post) {
     int totalVotos = 0;
     int jaVotou = 0;
 
@@ -136,7 +134,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
   }
 
   Widget build(BuildContext context) {
-    final Map<String, dynamic> post = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
+    final Map<String, dynamic> post =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
     final ThemeData theme = Theme.of(context);
 
     Uint8List imageBytes;
@@ -153,7 +152,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
         imageBytes = Uint8List(0);
       }
 
-
       if (post['EVENTO'] == 1) {
         //Evento é espaço
         children = [
@@ -165,7 +163,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           GestureDetector(
             onTap: () {
               if (post['WEBSITE'] != null && post['WEBSITE']!.isNotEmpty) {
-                print(post['WEBSITE']);
                 _launchWebsite(post['WEBSITE']!);
               } else {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -173,11 +170,14 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                 );
               }
             },
-            child: Text(
-              'Website: ${post['WEBSITE'] ?? 'Não existe website'}',
-              style: TextStyle(
-                fontSize: 16,
-                color: theme.disabledColor,
+            child: Container(
+              padding: EdgeInsets.all(8.0), // Adiciona um pouco de padding
+              child: Text(
+                'Website: ${post['WEBSITE'] ?? 'Não existe website'}',
+                style: TextStyle(
+                  fontSize: 16,
+                  color: theme.disabledColor,
+                ),
               ),
             ),
           ),
@@ -196,7 +196,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           SizedBox(height: 10),
           Row(mainAxisAlignment: MainAxisAlignment.start, children: [
             Text(
-              'Preço Médio: ${post['PRECO']  ?? 'Não existe preço'}€',
+              'Preço Médio: ${post['PRECO'] ?? 'Não existe preço'}€',
               style: TextStyle(fontSize: 15, color: theme.disabledColor),
             )
           ]),
@@ -335,7 +335,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                     SizedBox(height: 20),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      children: _buildVotingOptions(listaopcoes, listavotos, post),
+                      children:
+                          _buildVotingOptions(listaopcoes, listavotos, post),
                     ),
                     SizedBox(height: 20),
                     _criarComentario(post),
@@ -474,7 +475,8 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           children: [
             ElevatedButton(
               onPressed: () async {
-                await widget.api.comentar(post['IDPUBLICACAO'].toString(), avaliacaoEstrelas.toDouble(), comentarController.text);
+                await widget.api.comentar(post['IDPUBLICACAO'].toString(),
+                    avaliacaoEstrelas.toDouble(), comentarController.text);
                 setState(() {
                   comentarioCriado = 0;
                 });
@@ -628,12 +630,8 @@ class _ComentarioCardState extends State<ComentarioCard> {
             TextButton(
               onPressed: () async {
                 try {
-                  // Chama a função de denúncia
-                  await widget.api.denunciar(
-                    idcomentario,
-                    textoDenunciarController.text,
-                    widget.cidade,
-                  );
+                  await widget.api.denunciar(idcomentario,
+                      textoDenunciarController.text, widget.cidade);
 
                   Fluttertoast.showToast(
                     msg: "Denúncia realizada com sucesso!",

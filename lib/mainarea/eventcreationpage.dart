@@ -139,7 +139,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
           child: Padding(
             padding: const EdgeInsets.only(right: 8.0),
             child: Text(
-              Translations.translate(context, 'option ${index + 1}'),
+              Translations.translate(context, 'option${index + 1}'),
               style: TextStyle(fontSize: 18),
               maxLines: 2,
             ),

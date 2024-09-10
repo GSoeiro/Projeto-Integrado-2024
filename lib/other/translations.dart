@@ -34,7 +34,7 @@ class Translations {
       'confirm_new_password': 'Confirme a Palavra-Passe',
       'register_page': 'Registar',
       'name': 'Nome',
-      'city': 'cidade',
+      'city': 'Cidade',
       'already_have_an_account': 'Já tem conta?',
       'looking_for': 'O que procura?',
       'filters': 'Filtros',
@@ -52,6 +52,10 @@ class Translations {
       'image': 'Imagem',
       'insert_image': 'Clique para selecionar uma imagem',
       'option': 'Opção',
+      'option1': 'Opção 1',
+      'option2': 'Opção 2',
+      'option3': 'Opção 3',
+      'option4': 'Opção 4',
       'create': 'Criar',
       'website': 'Website',
       'coordinates': 'Coordenadas',
@@ -68,8 +72,15 @@ class Translations {
       'spanish': 'Espanhol',
       'selected_date': 'Selecione uma data',
       'date': 'Data',
-      'price': 'Preço'
-      
+      'price': 'Preço',
+      'health': 'Saúde',
+      'sports': 'Desporto',
+      'education': 'Educação',
+      'Food': 'Gastronomia',
+      'housing': 'Habitação',
+      'transportation': 'Transportes',
+      'leisure': 'Lazer',
+      'reg_events': 'Eventos Inscrito'
     },
     'en': {
       'morning': 'Good Morning',
@@ -119,6 +130,10 @@ class Translations {
       'image': 'Image',
       'insert_image': 'Click to insert an image',
       'option': 'Option',
+      'option1': 'Option 1',
+      'option2': 'Option 2',
+      'option3': 'Option 3',
+      'option4': 'Option 4',
       'create': 'Create',
       'website': 'Website',
       'coordinates': 'Coordinates',
@@ -135,7 +150,15 @@ class Translations {
       'spanish': 'Spanish',
       'date': 'Date',
       'selected_date': 'Select a date',
-      'price': 'Price'
+      'price': 'Price',
+      'health': 'Health',
+      'sports': 'Sports',
+      'education': 'Education',
+      'Food': 'Food',
+      'housing': 'Housing',
+      'transportation': 'Transportation',
+      'leisure': 'Leisure',
+      'reg_events': 'Registered Events'
     },
     'es': {
       'morning': 'Buenos Dias',
@@ -185,6 +208,10 @@ class Translations {
       'image': 'Imagen',
       'insert_image': 'Haga clic para seleccionar una imagen',
       'option': 'Opción',
+      'option1': 'Opción 1',
+      'option2': 'Opción 2',
+      'option3': 'Opción 3',
+      'option4': 'Opción 4',
       'create': 'Crear',
       'website': 'Website',
       'coordinates': 'Coordenadas',
@@ -201,7 +228,15 @@ class Translations {
       'spanish': 'Español',
       'date': 'Fecha',
       'selected_date': 'Seleccione una fecha',
-      'price': 'Precio'
+      'price': 'Precio',
+      'health': 'Salud',
+      'sports': 'Desporte',
+      'education': 'Educacíon',
+      'Food': 'Comida',
+      'housing': 'Vivienda',
+      'transportation': 'Transportes',
+      'leisure': 'Ocio',
+      'reg_events': 'Eventos Inscritos'
     },
   };
 

@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:softshares/mainarea/votedevents.dart';
 import 'package:softshares/services/localdb.dart';
 import 'package:softshares/mainarea/calendar.dart';
 import 'package:softshares/other/translations.dart';
@@ -54,10 +55,6 @@ Future<void> loadBackend(ApiService apiService) async {
   }
 }
 
-/*Future<bool> getRememberMe() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  return prefs.getBool('rememberMe') ?? false;
-}*/
 
 //-----------------------Classe Drawer-------------------------------//
 
@@ -160,7 +157,9 @@ class _CustomDrawerState extends State<CustomDrawer> {
               color: Colors.blue,
             ),
             child: Center(
-              child: Text('Filtros', style: TextStyle(fontSize: 25)),
+              child: Text(Translations.translate(context, 'filters'),
+              style: TextStyle(fontSize: 25),
+              ),
             ),
           ),
           ),
@@ -305,7 +304,6 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
     posts = await widget.bd.mostrarPostsByCidade(_selectedCities);
   }
 
-  print("Posts carregados: $posts");
   return posts;
 }
 
@@ -520,6 +518,59 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
                     ),
                   ),
                 ),
+                  const SizedBox(height: 12.0),
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        pageBuilder: (context, animation, secondaryAnimation) =>
+                            VotedEvents(
+                          api: widget.api,
+                          bd: widget.bd,
+                        ),
+                        transitionsBuilder:
+                            (context, animation, secondaryAnimation, child) {
+                          var begin = Offset(0.0, 1.0);
+                          var end = Offset.zero;
+                          var curve = Curves.ease;
+                          var tween = Tween(begin: begin, end: end)
+                              .chain(CurveTween(curve: curve));
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(12.0),
+                    decoration: BoxDecoration(
+                      color: theme.primaryColor,
+                      borderRadius: BorderRadius.circular(8.0),
+                      boxShadow: [
+                        BoxShadow(
+                          color: theme.shadowColor.withOpacity(0.5),
+                          spreadRadius: 2,
+                          blurRadius: 7,
+                          offset: const Offset(0, 3),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.calendar_month_rounded, color: Colors.white),
+                        SizedBox(width: 8.0),
+                        Text(Translations.translate(context, 'reg_events'),
+                          style: TextStyle(fontSize: 16.0, color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                
               ],
             ),
           ),
@@ -573,6 +624,7 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
           : RefreshIndicator(
               onRefresh: _onRefresh,
               child: FutureBuilder<List<Map<String, dynamic>>>(
+                
                 future: _postsFuture,
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
@@ -583,7 +635,9 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
                     return ListView(
                       padding: const EdgeInsets.symmetric(horizontal: 16.0),
                       children: [
-                        Center(child: Text('Não existem publicações disponíveis')),
+                        Center(
+                          child: Text(Translations.translate(context, 'no_post_to_show')),
+                          ),
                         SizedBox(height: 200),
                       ],
                     );
@@ -593,8 +647,7 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
                       itemCount: snapshot.data!.length,
                       itemBuilder: (context, index) {
                         var post = snapshot.data![index];
-                        print('Publicacoes');
-                        print(post);
+        
                     return GestureDetector(
                     onTap: () {
                       Navigator.pushNamed(context, '/publicacoespage',

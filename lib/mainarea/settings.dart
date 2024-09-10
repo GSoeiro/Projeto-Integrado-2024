@@ -32,8 +32,7 @@ class _SettingsPageState extends State<SettingsPage> {
       _isDarkMode = prefs.getBool('isDarkMode') ?? false; 
       String? savedLanguage = prefs.getString('languageCode');
       if (savedLanguage != null) {
-        Provider.of<LocaleProvider>(context, listen: false)
-            .setLocale(Locale(savedLanguage));
+        Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale(savedLanguage));
       }
     });
   }
@@ -51,18 +50,19 @@ class _SettingsPageState extends State<SettingsPage> {
     widget.onThemeToggle();
   }
 
-  void _logout() async {
-    SharedPreferences prefs = await SharedPreferences.getInstance();
-    await prefs.remove('cidade');
-    await prefs.remove('nomeColaborador');
-    await prefs.remove('isDarkMode');
-    await prefs.remove('languageCode');
-    widget.onThemeToggle();
-    Navigator.pushReplacementNamed(context, '/loginpage');
-    setState(() {
-      _isDarkMode = false;
-    });
-  }
+void _logout() async {
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+  await prefs.remove('cidade');
+  await prefs.remove('nomeColaborador');
+  await prefs.remove('languageCode');
+  await prefs.remove('isDarkMode');
+  Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale('pt'));
+  setState(() {
+    _isDarkMode = false;
+  });
+  Navigator.pushReplacementNamed(context, '/loginpage');
+}
+
 
   void _changeLanguage(String languageCode) async {
     Provider.of<LocaleProvider>(context, listen: false)
@@ -117,7 +117,7 @@ class _SettingsPageState extends State<SettingsPage> {
                     color: Color.fromRGBO(141, 152, 167, 1.0), thickness: 1.0),
                 SizedBox(height: 10),
                 ListTile(
-                  leading: Icon(Icons.brightness_6),
+                  leading: Icon(Icons.brightness_6,),
                   title: Text(Translations.translate(context, 'dark_mode')),
                   trailing: Switch(
                     value: _isDarkMode,
@@ -169,43 +169,53 @@ class _SettingsPageState extends State<SettingsPage> {
     );
   }
 
-  void _showLogoutConfirmationDialog() {
-    showDialog(
-      context: context,
-      builder: (BuildContext context) {
-        final theme = Theme.of(context);
-        return AlertDialog(
-          backgroundColor: theme.dialogBackgroundColor,
-          content: Text(
-            Translations.translate(context, 'logout_confirmation'),
-            style: TextStyle(color: theme.primaryColor),
+ void _showLogoutConfirmationDialog() {
+  final theme = Theme.of(context); // Obtém o tema atual
+
+  showDialog(
+    context: context,
+    builder: (BuildContext context) {
+      bool isDarkMode = theme.brightness == Brightness.dark; // Verifica se está no modo escuro
+
+      return AlertDialog(
+        backgroundColor: isDarkMode ? Colors.grey[900] : Colors.white, // Cor de fundo de acordo com o modo
+        content: Text(
+          Translations.translate(context, 'logout_confirmation'),
+          style: TextStyle(
+            color: isDarkMode ? Colors.white : Colors.black, // Cor do texto de acordo com o modo
           ),
-          actions: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                TextButton(
-                  onPressed: _logout,
-                  child: Text(
-                    Translations.translate(context, 'confirm'),
-                    style: TextStyle(color: theme.primaryColor),
+        ),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TextButton(
+                onPressed: _logout,
+                child: Text(
+                  Translations.translate(context, 'confirm'),
+                  style: TextStyle(
+                    color: isDarkMode ? Color.fromRGBO(0, 179, 255, 1.0) : Color.fromRGBO(0, 179, 255, 1.0), // Botão de confirmação
                   ),
                 ),
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                  child: Text(
-                    Translations.translate(context, 'cancel'),
-                    style: TextStyle(color: theme.hintColor),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text(
+                  Translations.translate(context, 'cancel'),
+                  style: TextStyle(
+                    color: isDarkMode ? Colors.grey[400] : Colors.grey[600], // Botão de cancelamento
                   ),
                 ),
-              ],
-            ),
-          ],
-        );
-      },
-    );
-  }
+              ),
+            ],
+          ),
+        ],
+      );
+    },
+  );
+}
+
 }
 

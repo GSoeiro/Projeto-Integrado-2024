@@ -326,62 +326,69 @@ try {
                 ],
               ),
               SizedBox(height: 30),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
-                        Translations.translate(context, 'coordinates'),
-                        style: TextStyle(fontSize: 18),
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: ElevatedButton(
-                        onPressed: () {
-                          Navigator.pushNamed(context, '/mapspage');
-                        },
-                        child: Text(Translations.translate(context, 'map'))),
-                  ),
-                ],
-              ),
-              SizedBox(width: 30),
-              Row(
-                children: [
-                  Expanded(
-                    flex: 2,
-                    child: Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: Text(
-                        Translations.translate(context, 'price'),
-                        style: TextStyle(fontSize: 18),
-                        maxLines: 1,
-                      ),
-                    ),
-                  ),
-                  SizedBox(width: 12),
-                  Expanded(
-                    flex: 3,
-                    child: TextFormField(
-                      controller: _precoController,
-                      decoration: InputDecoration(
-                        border: OutlineInputBorder(),
-                        hintText: Translations.translate(context, 'price'),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                        }
-                        return null;
-                      },
-                    ),
-                  ),
-                ],
-              ),
+              Column(
+  children: [
+    Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Text(
+              Translations.translate(context, 'coordinates'),
+              style: TextStyle(fontSize: 18),
+              maxLines: 1,
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: ElevatedButton(
+            onPressed: () {
+              Navigator.pushNamed(context, '/mapspage');
+            },
+            child: Text(Translations.translate(context, 'map')),
+          ),
+        ),
+      ],
+    ),
+    SizedBox(height: 30), // Added space between rows
+    Row(
+      children: [
+        Expanded(
+          flex: 2,
+          child: Padding(
+            padding: const EdgeInsets.only(right: 8.0),
+            child: Text(
+              Translations.translate(context, 'price'),
+              style: TextStyle(fontSize: 18),
+              maxLines: 1,
+            ),
+          ),
+        ),
+        SizedBox(width: 12),
+        Expanded(
+          flex: 3,
+          child: TextFormField(
+            controller: _precoController,
+            decoration: InputDecoration(
+              border: OutlineInputBorder(),
+              hintText: Translations.translate(context, 'price'),
+            ),
+            validator: (value) {
+              if (value == null || value.isEmpty) {
+                // Handle empty value if needed
+              }
+              return null;
+            },
+          ),
+        ),
+      ],
+    ),
+  ],
+),
+
               SizedBox(height: 30),
               Row(
                 children: [
@@ -390,7 +397,7 @@ try {
                     child: Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: Text(
-                        Translations.translate(context, 'imagem'),
+                        Translations.translate(context, 'image'),
                         style: TextStyle(fontSize: 18),
                         maxLines: 1,
                       ),

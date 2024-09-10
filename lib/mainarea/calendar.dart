@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:softshares/services/apiservice.dart';
 import 'package:softshares/services/localdb.dart';
-import 'package:softshares/mainarea/publicacoes.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:intl/intl.dart';
 
@@ -21,6 +20,7 @@ class _CalendarPageState extends State<CalendarPage> {
   DateTime? _selectedDay;
 
   Map<DateTime, List<Map<String, dynamic>>> _events = {};
+  List<Map<String, dynamic>> eventos = [];
 
   Future<void> buscarEventos() async {
     List<Map<String, dynamic>> post = await widget.bd.mostrarPosts();
@@ -33,53 +33,107 @@ class _CalendarPageState extends State<CalendarPage> {
     }
 
     Map<DateTime, List<Map<String, dynamic>>> eventosPorData = {};
+    List<Map<String, dynamic>> _eventos = [];
 
-for (var evento in postsFinal) {
-  var dataEvento = evento['DATAEVENTO'];
-
-  if (dataEvento == null || dataEvento.isEmpty) {
-    print('DATAEVENTO está vazio ou nulo: $dataEvento');
-    continue;
-  }
-
-  DateTime eventoData;
-  if (dataEvento is String) {
-    try {
-      eventoData = DateTime.parse(dataEvento); // Tenta usar o formato padrão ISO 8601
-      print('Data no formato ISO 8601: $eventoData');
-    } catch (e) {
-      try {
-        eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento); // Tenta o formato dd-MM-yyyy
-        print('Data no formato dd-MM-yyyy: $eventoData');
-      } catch (e) {
-        print('Erro ao converter DATAEVENTO para DateTime: $e');
-        continue; // Pula para o próximo evento
+    for (var evento in postsFinal) {
+      var dataEvento = evento['DATAEVENTO'];
+      _eventos.add(evento);
+      if (dataEvento == null || dataEvento.isEmpty) {
+        print('DATAEVENTO está vazio ou nulo: $dataEvento');
+        continue;
       }
+
+      DateTime eventoData;
+      if (dataEvento is String) {
+        try {
+          eventoData = DateTime.parse(dataEvento); // Tenta usar o formato padrão ISO 8601
+          print('Data no formato ISO 8601: $eventoData');
+        } catch (e) {
+          try {
+            eventoData = DateFormat('dd-MM-yyyy').parse(dataEvento); // Tenta o formato dd-MM-yyyy
+          } catch (e) {
+            continue; 
+          }
+        }
+      } else if (dataEvento is DateTime) {
+        eventoData = dataEvento;
+      } else {
+        continue;
+      }
+
+      // Adiciona o evento no mapa de eventos
+      if (!eventosPorData.containsKey(eventoData)) {
+        eventosPorData[eventoData] = [];
+      }
+      eventosPorData[eventoData]!.add(evento);
     }
-  } else if (dataEvento is DateTime) {
-    eventoData = dataEvento;
-  } else {
-    print('Tipo de dado inválido para DATAEVENTO: $dataEvento');
-    continue;
-  }
-
-  // Adiciona o evento no mapa de eventos
-  if (!eventosPorData.containsKey(eventoData)) {
-    eventosPorData[eventoData] = [];
-  }
-  eventosPorData[eventoData]!.add(evento);
-}
-
 
     setState(() {
       _events = eventosPorData;
+      eventos = _eventos;
     });
+
+   
   }
+
+  Widget mostrarCardCalendario(List<Map<String, dynamic>> posts) {
+  final ThemeData theme = Theme.of(context);
+  if (posts.isEmpty) {
+    return Column(
+      children: [Text('Não existem eventos para mostrar!')],
+    );
+  }
+  List<Widget> widgets = [];
+  for (var evento in posts) {
+    widgets.add(
+      GestureDetector(
+        onTap: () {
+          Navigator.pushNamed(context, '/publicacoespage', arguments: evento);
+        },
+        child: Container(
+          margin: EdgeInsets.all(10),
+          padding: EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            border: Border.all(color: theme.dividerColor),
+            borderRadius: BorderRadius.circular(10),
+            color: theme.cardColor,
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                evento['TITULO'] ?? 'Não existe título',
+                style: TextStyle(
+                    fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              SizedBox(height: 5),
+              Text(
+                '${evento['NOMECATEGORIA'] ?? 'Não existe categoria'} - ${evento['NOMESUBCATEGORIA'] ?? 'Não existe subcategoria'}',
+                style: TextStyle(
+                    fontSize: 14, color: theme.disabledColor),
+              ),
+              SizedBox(height: 5),
+              Text(
+                'Data do Evento: ${evento['DATAEVENTO'] ?? 'Não existe data'}',
+                style: TextStyle(
+                    fontSize: 14, color: theme.disabledColor),
+              ),
+            ],   
+          ),
+          
+        ),
+      ),
+    );
+  }
+  return Column(
+    children: widgets,
+  );
+}
 
   @override
   void initState() {
     super.initState();
-    buscarEventos(); // Carregar eventos quando a página for inicializada
+    buscarEventos();
   }
 
   @override
@@ -88,31 +142,15 @@ for (var evento in postsFinal) {
       appBar: AppBar(
         title: Text('Calendário de Eventos'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(8.0),
-        child: TableCalendar(
+      body: Column(
+        //padding: const EdgeInsets.all(8.0),
+        children:[
+          TableCalendar(
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           calendarFormat: _calendarFormat,
-          selectedDayPredicate: (day) {
-            return isSameDay(_selectedDay, day);
-          },
-         onDaySelected: (selectedDay, focusedDay) {
-  setState(() {
-    _selectedDay = selectedDay;
-    _focusedDay = focusedDay;
-    if (_events.containsKey(selectedDay)) {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => PostDetailsPage(api: widget.api, event: {}, 
-          ),
-        ),
-      );
-    }
-  });
-},
+
           onFormatChanged: (format) {
             setState(() {
               _calendarFormat = format;
@@ -122,7 +160,6 @@ for (var evento in postsFinal) {
             _focusedDay = focusedDay;
           },
           eventLoader: (day) {
-            // Usa só o "day" sem horas para comparar datas corretamente
             return _events[DateTime(day.year, day.month, day.day)] ?? [];
           },
           calendarBuilders: CalendarBuilders(
@@ -144,6 +181,7 @@ for (var evento in postsFinal) {
               return null;
             },
           ),
+          
           calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
               color: Colors.blue,
@@ -160,32 +198,11 @@ for (var evento in postsFinal) {
             formatButtonShowsNext: false,
           ),
         ),
+        mostrarCardCalendario(eventos)
+        ] 
+        
       ),
-    );
-  }
-}
 
-class EventPage extends StatelessWidget {
-  final List<Map<String, dynamic>> events;
-
-  EventPage({required this.events});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Eventos'),
-      ),
-      body: ListView.builder(
-        itemCount: events.length,
-        itemBuilder: (context, index) {
-          final event = events[index];
-          return ListTile(
-            title: Text(event['TITLE'] ?? 'Evento sem título'),
-            subtitle: Text(event['DESCRIPTION'] ?? 'Sem descrição'),
-          );
-        },
-      ),
     );
   }
 }

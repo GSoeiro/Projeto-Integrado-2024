@@ -563,4 +563,21 @@ class BaseDeDados {
       return [];
     }
   }
+
+Future<Map<String, dynamic>?> buscarPost(int id) async {
+  try {
+    Database db = await basededados;
+    List<Map<String, dynamic>> posts = await db.rawQuery('SELECT * FROM POST WHERE IDPUBLICACAO = ?', [id]);
+
+    if (posts.isNotEmpty) {
+      return posts[0]; 
+    } else {
+      return null; 
+    }
+  } catch (e) {
+    print('Erro ao mostrar o post: $e');
+    return null; 
+  }
+}
+
 }

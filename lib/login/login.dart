@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../services/apiservice.dart';
@@ -376,7 +377,18 @@ class _LoginPageState extends State<LoginPage> {
   _login() async {
     try {
       int IDColaborador = await widget.api.loginUserOnBackend(emailController.text, passwordController.text);
-
+      if(widget.api.ativo == 0){
+        Fluttertoast.showToast(
+      msg: "A sua conta encontra-se inativa!",
+      toastLength: Toast.LENGTH_SHORT,
+      gravity: ToastGravity.CENTER,
+      timeInSecForIosWeb: 2,
+      backgroundColor: Colors.red,
+      textColor: Colors.white,
+      fontSize: 16.0
+    );
+        return;
+  }
       if (IDColaborador != 0 ) {
         SharedPreferences prefs = await SharedPreferences.getInstance();
         mudouPassword = await prefs.getInt('mudoupassword');
