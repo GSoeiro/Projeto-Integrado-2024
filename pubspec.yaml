@@ -54,6 +54,7 @@ dependencies:
   table_calendar: ^3.0.8
   permission_handler: ^11.0.0
   flutter_secure_storage: ^8.0.0
+  
 
 dev_dependencies:
   flutter_test:

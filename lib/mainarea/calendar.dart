@@ -137,20 +137,18 @@ class _CalendarPageState extends State<CalendarPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: Text('Calendário de Eventos'),
-      ),
-      body: Column(
-        //padding: const EdgeInsets.all(8.0),
-        children:[
-          TableCalendar(
+Widget build(BuildContext context) {
+  return Scaffold(
+    appBar: AppBar(
+      title: Text('Calendário de Eventos'),
+    ),
+    body: Column(
+      children: [
+        TableCalendar(
           focusedDay: _focusedDay,
           firstDay: DateTime.utc(2020, 1, 1),
           lastDay: DateTime.utc(2030, 12, 31),
           calendarFormat: _calendarFormat,
-
           onFormatChanged: (format) {
             setState(() {
               _calendarFormat = format;
@@ -181,7 +179,6 @@ class _CalendarPageState extends State<CalendarPage> {
               return null;
             },
           ),
-          
           calendarStyle: CalendarStyle(
             todayDecoration: BoxDecoration(
               color: Colors.blue,
@@ -198,11 +195,13 @@ class _CalendarPageState extends State<CalendarPage> {
             formatButtonShowsNext: false,
           ),
         ),
-        mostrarCardCalendario(eventos)
-        ] 
-        
-      ),
-
-    );
-  }
+        Expanded(
+          child: SingleChildScrollView(
+            child: mostrarCardCalendario(eventos),
+          ),
+        ),
+      ],
+    ),
+  );
+}
 }

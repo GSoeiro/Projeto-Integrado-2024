@@ -8,6 +8,7 @@ import 'dart:typed_data';
 import 'package:softshares/services/apiservice.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+
 class MyImageWidget extends StatelessWidget {
   final Map<String, dynamic> post;
 
@@ -18,6 +19,8 @@ class MyImageWidget extends StatelessWidget {
     return Image.file(File(post['IMAGEM']));
   }
 }
+
+
 
 class PostDetailsPage extends StatefulWidget {
   final ApiService api;
@@ -61,13 +64,30 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-  Future<void> _launchWebsite(String url) async {
-    if (await canLaunch(url)) {
-      await launch(url);
-    } else {
-      throw 'Não foi possível abrir o URL: $url';
-    }
+Future<void> _launchWebsite(String url) async {
+  Uri uri = Uri.parse(url);
+  if (!uri.hasScheme) {
+    url = 'http://$url';
   }
+  uri = Uri.parse(url);
+  try {
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri);
+    } else {
+      print('Não foi possível abrir o URL: $url');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Não foi possível abrir o URL: $url')),
+      );
+    }
+  } catch (e) {
+    print('Erro ao abrir o URL: $e');
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text('Erro ao abrir o URL: $e')),
+    );
+  }
+}
+
+
 
   List<Widget> _buildVotingOptions(List<dynamic> listaopcoes,
       List<dynamic> listavotos, Map<String, dynamic> post) {
@@ -170,8 +190,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                 );
               }
             },
-            child: Container(
-              padding: EdgeInsets.all(8.0), // Adiciona um pouco de padding
+            child: Container( 
               child: Text(
                 'Website: ${post['WEBSITE'] ?? 'Não existe website'}',
                 style: TextStyle(
@@ -209,7 +228,7 @@ class PostDetailsPageState extends State<PostDetailsPage> {
             post['TEXTO'] ?? 'Não existe descrição',
             style: TextStyle(fontSize: 16),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 40),
           _criarComentario(post),
           SizedBox(height: 20),
           FutureBuilder<List<dynamic>>(
@@ -263,31 +282,6 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                     style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
                   ),
                   actions: [
-                    IconButton(
-                      onPressed: () {
-                        if (post['COORDENADAS'] != null &&
-                            post['COORDENADAS'].isNotEmpty) {
-                          try {
-                            String coordenadasString =
-                                post['COORDENADAS'].trim();
-                            _openGoogleMaps(coordenadasString);
-                          } catch (e) {
-                            // Captura qualquer erro
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                  content: Text(
-                                      'Erro ao processar coordenadas: $e')),
-                            );
-                          }
-                        } else {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                                content: Text('Nenhuma coordenada disponível')),
-                          );
-                        }
-                      },
-                      icon: Icon(Icons.pin_drop_rounded),
-                    ),
                     IconButton(
                         onPressed: () {
                           _shareAppInfo();

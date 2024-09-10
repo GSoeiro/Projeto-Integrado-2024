@@ -38,17 +38,24 @@ class _SpaceCreationPageState extends State<Spacecreationpage> {
    int? _selectedCidade;
   Uint8List? imageBytes;
 
-  Future<void> _pickImage() async {
-    XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
+Future<void> _pickImage() async {
+  XFile? pickedFile = await picker.pickImage(source: ImageSource.gallery);
 
-    if (pickedFile != null) {
-      imageBytes = await pickedFile.readAsBytes();
-    } else {
-      imagem = null;
-      _image = null;
-    }
-    setState(() {});
+  if (pickedFile != null) {
+    imageBytes = await pickedFile.readAsBytes();
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Imagem selecionada com sucesso!'),
+        duration: Duration(seconds: 2), // Define a duração do SnackBar
+      ),
+    );
+  } else {
+    imagem = null;
+    _image = null;
   }
+  setState(() {});
+}
+
 
   Future<void> _criarEspaco() async {
     if (_selectedCategoria == null) {

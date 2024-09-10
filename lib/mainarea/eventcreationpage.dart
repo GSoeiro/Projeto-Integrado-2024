@@ -26,7 +26,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
   final TextEditingController _descricaoController = TextEditingController();
   final TextEditingController _categoriaController = TextEditingController();
   final TextEditingController _subcategoriaController = TextEditingController();
-  List<FormItem> formItems = List.generate(2, (index) => FormItem()); 
+  List<FormItem> formItems = List.generate(2, (index) => FormItem());
   String cidadeColaborador = '';
   String? imagem;
   File? _image;
@@ -43,6 +43,13 @@ class _EventcreationpageState extends State<Eventcreationpage> {
 
     if (pickedFile != null) {
       imageBytes = await pickedFile.readAsBytes();
+      // Exibe um SnackBar informando que a imagem foi selecionada com sucesso
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Imagem selecionada com sucesso!'),
+          duration: Duration(seconds: 2), // Define a duração do SnackBar
+        ),
+      );
     } else {
       imagem = null;
       _image = null;
@@ -50,16 +57,12 @@ class _EventcreationpageState extends State<Eventcreationpage> {
     setState(() {});
   }
 
-
-
-
   Future<void> _loadCidadeColaborador() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
     setState(() {
       cidadeColaborador = prefs.getString('cidade') ?? '';
     });
   }
-
 
   Future<void> _selectDate() async {
     DateTime now = DateTime.now();
@@ -79,57 +82,54 @@ class _EventcreationpageState extends State<Eventcreationpage> {
     }
   }
 
- Future<void> _criarEvento() async {
-  if (_selectedCategoria == null) {
-    print('Por favor, selecione uma categoria.');
-    return;
+  Future<void> _criarEvento() async {
+    if (_selectedCategoria == null) {
+      print('Por favor, selecione uma categoria.');
+      return;
+    }
+
+    if (_selectedSubCategoria == null) {
+      print('Por favor, selecione uma subcategoria.');
+      return;
+    }
+
+    String cidade = _selectedCidade.toString();
+    String titulo = _tituloController.text;
+    String descricao = _descricaoController.text;
+    String categoria = _selectedCategoria.toString();
+    String subcategoria = _selectedSubCategoria.toString();
+    String dataevento = DateFormat('dd-MM-yyyy').format(_selectedDate!);
+    List<String> opcoes = formItems.map((item) => item.content).toList();
+
+    DateTime parsedDate = DateFormat('dd-MM-yyyy').parse(dataevento);
+
+    try {
+      await widget.api.criarEvento(cidade, titulo, descricao, categoria,
+          subcategoria, imageBytes, opcoes, parsedDate);
+
+      Fluttertoast.showToast(
+          msg: "Evento criado com sucesso!",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.green,
+          textColor: Colors.white,
+          fontSize: 16.0);
+
+      // Navega de volta para a página principal
+      Navigator.pushReplacementNamed(context, '/mainpage');
+    } catch (e) {
+      Fluttertoast.showToast(
+          msg: "Erro ao criar o evento.",
+          toastLength: Toast.LENGTH_SHORT,
+          gravity: ToastGravity.CENTER,
+          timeInSecForIosWeb: 1,
+          backgroundColor: Colors.red,
+          textColor: Colors.white,
+          fontSize: 16.0);
+      print('Erro ao criar evento: $e');
+    }
   }
-
-  if (_selectedSubCategoria == null) {
-    print('Por favor, selecione uma subcategoria.');
-    return;
-  }
-
-  String cidade = _selectedCidade.toString();
-  String titulo = _tituloController.text;
-  String descricao = _descricaoController.text;
-  String categoria = _selectedCategoria.toString();
-  String subcategoria = _selectedSubCategoria.toString();
-  String dataevento = DateFormat('dd-MM-yyyy').format(_selectedDate!);
-  List<String> opcoes = formItems.map((item) => item.content).toList();
-
-  DateTime parsedDate = DateFormat('dd-MM-yyyy').parse(dataevento);
-  
-  try {
-    await widget.api.criarEvento(cidade, titulo, descricao, categoria, subcategoria, imageBytes, opcoes, parsedDate);
-    
-
-    Fluttertoast.showToast(
-      msg: "Evento criado com sucesso!",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.CENTER,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Colors.green,
-      textColor: Colors.white,
-      fontSize: 16.0
-    );
-
-    // Navega de volta para a página principal
-    Navigator.pushReplacementNamed(context, '/mainpage');
-  } catch (e) {
-    Fluttertoast.showToast(
-      msg: "Erro ao criar o evento.",
-      toastLength: Toast.LENGTH_SHORT,
-      gravity: ToastGravity.CENTER,
-      timeInSecForIosWeb: 1,
-      backgroundColor: Colors.red,
-      textColor: Colors.white,
-      fontSize: 16.0
-    );
-    print('Erro ao criar evento: $e');
-  }
-}
-
 
   Widget buildDynamicRow(int index) {
     return Row(
@@ -210,7 +210,7 @@ class _EventcreationpageState extends State<Eventcreationpage> {
             child: Padding(
           padding: const EdgeInsets.symmetric(horizontal: 30.0),
           child:
-            Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+              Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(height: 30),
             Row(
               children: [
@@ -506,28 +506,36 @@ class _DropDownCategoriasState extends State<DropDownCategorias> {
 
   int? _selectedCategoria;
 
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: categoriasFuture,
-      builder: (BuildContext context, AsyncSnapshot<List<dynamic>> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Text('A carregar!');
-        } else if (snapshot.hasError) {
-          return Text('Erro ao carregar categorias: ${snapshot.error}');
-        } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return Text('Nenhuma categoria encontrada');
-        } else {
-          List<dynamic>? categorias = snapshot.data;
-          return DropdownButtonFormField<int>(
+@override
+Widget build(BuildContext context) {
+  return FutureBuilder<List<Map<String, dynamic>>>(
+    future: categoriasFuture,
+    builder: (BuildContext context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      if (snapshot.connectionState == ConnectionState.waiting) {
+        return Text('A carregar!');
+      } else if (snapshot.hasError) {
+        return Text('Erro ao carregar categorias: ${snapshot.error}');
+      } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+        return Text('Nenhuma categoria encontrada');
+      } else {
+        List<Map<String, dynamic>> categorias = snapshot.data!;
+        return Container(
+          width: double.infinity, 
+          child: DropdownButtonFormField<int>(
             decoration: InputDecoration(
               border: OutlineInputBorder(),
             ),
             value: _selectedCategoria,
-            items: categorias!.map((categoria) {
+            items: categorias.map((categoria) {
               return DropdownMenuItem<int>(
                 value: categoria['IDCATEGORIA'],
-                child: Text(categoria['NOME']),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: MediaQuery.of(context).size.width * 0.8), 
+                  child: Text(
+                    categoria['NOME'],
+                    overflow: TextOverflow.ellipsis, 
+                  ),
+                ),
               );
             }).toList(),
             hint: Text(
@@ -545,6 +553,9 @@ class _DropDownCategoriasState extends State<DropDownCategorias> {
               }
               return null;
             },
+            isExpanded:
+                true, 
+          )
           );
         }
       },
@@ -553,7 +564,7 @@ class _DropDownCategoriasState extends State<DropDownCategorias> {
 }
 
 class DropDownSubCategorias extends StatefulWidget {
-  final int categoriaSelecionada; // Use this to fetch subcategories
+  final int categoriaSelecionada; 
   final Function(int) onChanged;
   final BaseDeDados bd;
 
@@ -575,15 +586,15 @@ class _DropDownSubCategoriasState extends State<DropDownSubCategorias> {
   @override
   void initState() {
     super.initState();
-    _loadSubcategorias(); // Load subcategories when widget is initialized
+    _loadSubcategorias(); 
   }
 
   @override
   void didUpdateWidget(covariant DropDownSubCategorias oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.categoriaSelecionada != oldWidget.categoriaSelecionada) {
-      _selectedSubCategoria = null; // Reset selected subcategoria
-      _loadSubcategorias(); // Reload subcategories when category changes
+      _selectedSubCategoria = null; 
+      _loadSubcategorias(); 
     }
   }
 
@@ -616,12 +627,12 @@ class _DropDownSubCategoriasState extends State<DropDownSubCategorias> {
             );
           }).toList();
 
-          // Verifica se a subcategoria selecionada é válida na nova lista
+
           if (_selectedSubCategoria != null &&
               !dropdownItems
                   .any((item) => item.value == _selectedSubCategoria)) {
             _selectedSubCategoria =
-                null; // Reseta a subcategoria se ela não existir na lista
+                null; 
           }
 
           return DropdownButtonFormField<int>(
@@ -637,7 +648,7 @@ class _DropDownSubCategoriasState extends State<DropDownSubCategorias> {
               setState(() {
                 _selectedSubCategoria = value;
               });
-              widget.onChanged(value!); // Notify parent widget
+              widget.onChanged(value!); 
             },
             validator: (value) {
               if (value == null) {
