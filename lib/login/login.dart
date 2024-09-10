@@ -378,6 +378,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       int IDColaborador = await widget.api.loginUserOnBackend(emailController.text, passwordController.text);
       if(widget.api.ativo == 0){
+        //Mensagem
         Fluttertoast.showToast(
       msg: "A sua conta encontra-se inativa!",
       toastLength: Toast.LENGTH_SHORT,
