@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:softshares/other/translations.dart';
 import 'package:share_plus/share_plus.dart';
 import 'package:flutter/material.dart';
@@ -84,37 +85,59 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-  List<Widget> _buildVotingOptions(List<dynamic> listaopcoes,
-      List<dynamic> listavotos, Map<String, dynamic> post) {
-    int totalVotos = 0;
-    int jaVotou = 0;
+List<Widget> _buildVotingOptions(List<dynamic> listaopcoes, List<dynamic> listavotos, Map<String, dynamic> post) {
+  Future<int?> _buscarIDCOLABORADOR() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    return prefs.getInt('id');
+  }
 
-    for (var opcao in listaopcoes) {
-      for (var voto in listavotos) {
-        if (voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO']) {
-          totalVotos++;
-        }
+  int totalVotos = 0;
+
+  for (var opcao in listaopcoes) {
+    for (var voto in listavotos) {
+      if (voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO']) {
+        totalVotos++;
       }
     }
-    return listaopcoes.map((opcao) {
-      int votosPorOpcao = listavotos
-          .where((voto) => voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO'])
-          .length;
-      double percentagem = totalVotos > 0 ? (votosPorOpcao / totalVotos) : 0.0;
+  }
 
-      for (var opcao in listaopcoes) {
-        for (var voto in listavotos) {
-          if (voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO'] &&
-              voto['IDCOLABORADOR'] == widget.api.IDCOLABORADOR) {
-            jaVotou = 1;
-          }
+  return listaopcoes.map((opcao) {
+    int votosPorOpcao = listavotos
+        .where((voto) => voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO'])
+        .length;
+    double percentagem = totalVotos > 0 ? (votosPorOpcao / totalVotos) : 0.0;
+
+    return FutureBuilder<int?>(
+      future: _buscarIDCOLABORADOR(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return CircularProgressIndicator(); // Exibir um indicador de carregamento enquanto obtém o ID
         }
-      }
-      if (jaVotou == 1) {
+
+        if (!snapshot.hasData) {
+          return Text('Erro ao carregar o ID do colaborador');
+        }
+
+        int? idColaborador = snapshot.data;
+        bool colaboradorVotouAqui = listavotos.any((voto) =>
+            voto['IDOPCOESESCOLHA'] == opcao['IDOPCAO'] &&
+            voto['IDCOLABORADOR'] == idColaborador);
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(opcao['NOME'] ?? 'Opção desconhecida'),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(opcao['NOME'] ?? 'Opção desconhecida'),
+                if (colaboradorVotouAqui)
+                  Icon(
+                    Icons.check_circle,
+                    color: Colors.green,
+                    size: 20,
+                  ),
+              ],
+            ),
             LinearProgressIndicator(
               value: percentagem,
               backgroundColor: Colors.grey[300],
@@ -122,31 +145,26 @@ class PostDetailsPageState extends State<PostDetailsPage> {
               minHeight: 15,
             ),
             SizedBox(height: 10),
+            if (!colaboradorVotouAqui)
+              GestureDetector(
+                onTap: () async {
+                  await widget.api.votar(opcao['IDOPCAO'], post, opcao['NOME']);
+                  _update();
+                },
+                child: Container(
+                  width: double.infinity,
+                  height: 30,
+                ),
+              ),
           ],
         );
-      } else {
-        return GestureDetector(
-          onTap: () async {
-            widget.api.votar(opcao['IDOPCAO'], post, opcao['NOME']);
-            _update();
-          },
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(opcao['NOME'] ?? 'Opção desconhecida'),
-              LinearProgressIndicator(
-                value: percentagem,
-                backgroundColor: Colors.grey[300],
-                valueColor: AlwaysStoppedAnimation<Color>(Colors.blue),
-                minHeight: 15,
-              ),
-              SizedBox(height: 10),
-            ],
-          ),
-        );
-      }
-    }).toList();
-  }
+      },
+    );
+  }).toList();
+}
+
+
+
 
   Widget build(BuildContext context) {
     final Map<String, dynamic> post =
@@ -754,6 +772,7 @@ class _ComentarioCardState extends State<ComentarioCard> {
                       await widget.api.updateRatingComentario(
                         widget.comentario['IDCOMENTARIO'],
                         widget.comentario['RATING'] + 1,
+                        
                       );
                       setState(() {
                         rating = widget.comentario['RATING'] + 1;
