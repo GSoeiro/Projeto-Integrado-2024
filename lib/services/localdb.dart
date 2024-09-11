@@ -532,6 +532,21 @@ class BaseDeDados {
   return result;
 }
 
+ Future<List<Map<String, dynamic>>> mostrarPostsBySubcategoriasAndCities(List<int> subcategoriasIds,List<int> cidadesIds) async {
+  Database db = await basededados;
+    
+    final String subcategoriasIn = subcategoriasIds.join(',');
+    final String cidadesIn = cidadesIds.join(',');
+
+    final result = await db.rawQuery('''
+      SELECT * FROM POST 
+      WHERE SUBCATEGORIA IN ($subcategoriasIn) 
+      AND CIDADE IN ($cidadesIn)
+    ''');
+
+    return result;
+  }
+
 
 
   Future<void> apagarComentarios() async {

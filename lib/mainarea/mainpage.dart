@@ -88,7 +88,7 @@ class _CustomDrawerState extends State<CustomDrawer> {
     _cidades = widget.bd.mostrarCidades();
     _subcategorias = {};
   }
-  
+
   void _updateSubcategorias(int categoriaId) async {
     setState(() {
       _subcategorias[categoriaId] = widget.bd.mostrarSubCategorias(categoriaId);
@@ -96,23 +96,32 @@ class _CustomDrawerState extends State<CustomDrawer> {
   }
 
   void _onCategoriaChanged(bool selected, int categoriaId) async {
-    if (selected) {
-      _selectedCategorias.add(categoriaId);
-      List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
-      for (var subcategoria in subcategorias) {
-        int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
-        if (!_selectedSubcategorias.contains(subcategoriaId)) {
-          _selectedSubcategorias.add(subcategoriaId);
+    setState(() {
+      if (selected) {
+        _selectedCategorias.add(categoriaId);
+      } else {
+        _selectedCategorias.remove(categoriaId);
+      }
+    });
+
+    // Atualiza as subcategorias correspondentes
+    List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
+    setState(() {
+      if (selected) {
+        for (var subcategoria in subcategorias) {
+          int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
+          if (!_selectedSubcategorias.contains(subcategoriaId)) {
+            _selectedSubcategorias.add(subcategoriaId);
+          }
+        }
+      } else {
+        for (var subcategoria in subcategorias) {
+          int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
+          _selectedSubcategorias.remove(subcategoriaId);
         }
       }
-    } else {
-      _selectedCategorias.remove(categoriaId);
-      List<Map<String, dynamic>> subcategorias = await widget.bd.mostrarSubCategorias(categoriaId);
-      for (var subcategoria in subcategorias) {
-        int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
-        _selectedSubcategorias.remove(subcategoriaId);
-      }
-    }
+    });
+
     _applyFilters();
   }
 
@@ -153,28 +162,29 @@ class _CustomDrawerState extends State<CustomDrawer> {
           SizedBox(
             height: 150,
             child: DrawerHeader(
-            decoration: BoxDecoration(
-              color: Colors.blue,
-            ),
-            child: Center(
-              child: Text(Translations.translate(context, 'filters'),
-              style: TextStyle(fontSize: 25),
+              decoration: BoxDecoration(
+                color: Colors.blue,
+              ),
+              child: Center(
+                child: Text(
+                  Translations.translate(context, 'filters'),
+                  style: TextStyle(fontSize: 25),
+                ),
               ),
             ),
           ),
-          ),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _categorias,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Erro ao carregar categorias');
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Text('Sem categorias disponíveis');
-              } else {
-                return Expanded(
-                  child: ListView(
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _categorias,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Erro ao carregar categorias');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text('Sem categorias disponíveis');
+                } else {
+                  return ListView(
                     children: snapshot.data!.map((categoria) {
                       int categoriaId = categoria['IDCATEGORIA'];
                       return ExpansionTile(
@@ -197,16 +207,16 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         children: <Widget>[
                           FutureBuilder<List<Map<String, dynamic>>>(
                             future: _subcategorias[categoriaId],
-                            builder: (context, snapshot) {
-                              if (snapshot.connectionState == ConnectionState.waiting) {
+                            builder: (context, subCatSnapshot) {
+                              if (subCatSnapshot.connectionState == ConnectionState.waiting) {
                                 return CircularProgressIndicator();
-                              } else if (snapshot.hasError) {
+                              } else if (subCatSnapshot.hasError) {
                                 return Text('Erro ao carregar subcategorias');
-                              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                              } else if (!subCatSnapshot.hasData || subCatSnapshot.data!.isEmpty) {
                                 return Text('Sem subcategorias disponíveis');
                               } else {
                                 return Column(
-                                  children: snapshot.data!.map((subcategoria) {
+                                  children: subCatSnapshot.data!.map((subcategoria) {
                                     int subcategoriaId = subcategoria['IDSUBCATEGORIA'];
                                     return ListTile(
                                       leading: Checkbox(
@@ -225,23 +235,23 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         ],
                       );
                     }).toList(),
-                  ),
-                );
-              }
-            },
+                  );
+                }
+              },
+            ),
           ),
-          FutureBuilder<List<Map<String, dynamic>>>(
-            future: _cidades,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return CircularProgressIndicator();
-              } else if (snapshot.hasError) {
-                return Text('Erro ao carregar cidades');
-              } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
-                return Text('Sem cidades disponíveis');
-              } else {
-                return Expanded(
-                  child: ListView(
+          Expanded(
+            child: FutureBuilder<List<Map<String, dynamic>>>(
+              future: _cidades,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return CircularProgressIndicator();
+                } else if (snapshot.hasError) {
+                  return Text('Erro ao carregar cidades');
+                } else if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                  return Text('Sem cidades disponíveis');
+                } else {
+                  return ListView(
                     shrinkWrap: true,
                     children: snapshot.data!.map((cidade) {
                       int cidadeId = cidade['IDCIDADE'];
@@ -255,20 +265,16 @@ class _CustomDrawerState extends State<CustomDrawer> {
                         ),
                       );
                     }).toList(),
-                  ),
-                );
-              }
-            },
+                  );
+                }
+              },
+            ),
           ),
         ],
       ),
     );
   }
 }
-
-
-
-
 
 
 //-------------------------------------Classe MainPage---------------------------------------//
@@ -295,17 +301,21 @@ Future<List<Map<String, dynamic>>> loadPosts() async {
   List<Map<String, dynamic>> posts;
 
   if (_selectedCities.isEmpty && _selectedSubcategorias.isEmpty) {
-
     posts = await widget.bd.mostrarPosts();
   } else if (_selectedCities.isEmpty) {
-
     posts = await widget.bd.mostrarPostsBySubcategorias(_selectedSubcategorias);
-  } else{
+  } else if (_selectedSubcategorias.isEmpty) {
     posts = await widget.bd.mostrarPostsByCidade(_selectedCities);
+  } else {
+    posts = await widget.bd.mostrarPostsBySubcategoriasAndCities(
+      _selectedSubcategorias,
+      _selectedCities,
+    );
   }
 
   return posts;
 }
+
 
    @override
   void initState() {

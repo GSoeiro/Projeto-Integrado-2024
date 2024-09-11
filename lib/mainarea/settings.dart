@@ -56,9 +56,9 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.remove('nomeColaborador');
     await prefs.remove('languageCode');
     await prefs.remove('isDarkMode');
-    setState(() {
+    /*setState(() {
       _isDarkMode = false;
-    });
+    });*/
     //widget.onThemeToggle(); 
 
     Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale('pt'));
