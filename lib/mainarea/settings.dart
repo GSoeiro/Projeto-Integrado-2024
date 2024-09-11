@@ -42,7 +42,7 @@ class _SettingsPageState extends State<SettingsPage> {
     await prefs.setBool('isDarkMode', isDarkMode);
   }
 
-  void _toggleDarkMode(bool value) {
+ void _toggleDarkMode(bool value) {
     setState(() {
       _isDarkMode = value;
     });
@@ -50,18 +50,22 @@ class _SettingsPageState extends State<SettingsPage> {
     widget.onThemeToggle();
   }
 
-void _logout() async {
-  SharedPreferences prefs = await SharedPreferences.getInstance();
-  await prefs.remove('cidade');
-  await prefs.remove('nomeColaborador');
-  await prefs.remove('languageCode');
-  await prefs.remove('isDarkMode');
-  Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale('pt'));
-  setState(() {
-    _isDarkMode = false;
-  });
-  Navigator.pushReplacementNamed(context, '/loginpage');
-}
+  Future<void> _logout() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    await prefs.remove('cidade');
+    await prefs.remove('nomeColaborador');
+    await prefs.remove('languageCode');
+    await prefs.remove('isDarkMode');
+    setState(() {
+      _isDarkMode = false;
+    });
+    //widget.onThemeToggle(); 
+
+    Provider.of<LocaleProvider>(context, listen: false).setLocale(Locale('pt'));
+
+    Navigator.pushReplacementNamed(context, '/loginpage');
+  }
+
 
 
   void _changeLanguage(String languageCode) async {

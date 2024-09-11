@@ -8,7 +8,6 @@ import 'dart:typed_data';
 import 'package:softshares/services/apiservice.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-
 class MyImageWidget extends StatelessWidget {
   final Map<String, dynamic> post;
 
@@ -19,8 +18,6 @@ class MyImageWidget extends StatelessWidget {
     return Image.file(File(post['IMAGEM']));
   }
 }
-
-
 
 class PostDetailsPage extends StatefulWidget {
   final ApiService api;
@@ -64,30 +61,28 @@ class PostDetailsPageState extends State<PostDetailsPage> {
     }
   }
 
-Future<void> _launchWebsite(String url) async {
-  Uri uri = Uri.parse(url);
-  if (!uri.hasScheme) {
-    url = 'http://$url';
-  }
-  uri = Uri.parse(url);
-  try {
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri);
-    } else {
-      print('Não foi possível abrir o URL: $url');
+  Future<void> _launchWebsite(String url) async {
+    Uri uri = Uri.parse(url);
+    if (!uri.hasScheme) {
+      url = 'http://$url';
+    }
+    uri = Uri.parse(url);
+    try {
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      } else {
+        print('Não foi possível abrir o URL: $url');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Não foi possível abrir o URL: $url')),
+        );
+      }
+    } catch (e) {
+      print('Erro ao abrir o URL: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Não foi possível abrir o URL: $url')),
+        SnackBar(content: Text('Erro ao abrir o URL: $e')),
       );
     }
-  } catch (e) {
-    print('Erro ao abrir o URL: $e');
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text('Erro ao abrir o URL: $e')),
-    );
   }
-}
-
-
 
   List<Widget> _buildVotingOptions(List<dynamic> listaopcoes,
       List<dynamic> listavotos, Map<String, dynamic> post) {
@@ -190,7 +185,7 @@ Future<void> _launchWebsite(String url) async {
                 );
               }
             },
-            child: Container( 
+            child: Container(
               child: Text(
                 'Website: ${post['WEBSITE'] ?? 'Não existe website'}',
                 style: TextStyle(
@@ -213,12 +208,16 @@ Future<void> _launchWebsite(String url) async {
             )
           ]),
           SizedBox(height: 10),
-          Row(mainAxisAlignment: MainAxisAlignment.start, children: [
-            Text(
-              'Preço Médio: ${post['PRECO'] ?? 'Não existe preço'}€',
-              style: TextStyle(fontSize: 15, color: theme.disabledColor),
-            )
-          ]),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: [
+              if (post['PRECO'] == null || post['PRECO'] == 0)
+                Text(
+                  'Preço Médio: ${post['PRECO'] ?? 'Não existe preço'}€',
+                  style: TextStyle(fontSize: 15, color: theme.disabledColor),
+                ),
+            ],
+          ),
           SizedBox(height: 10),
           post['IMAGEM'] != 'semimagem'
               ? MyImageWidget(post: post)
