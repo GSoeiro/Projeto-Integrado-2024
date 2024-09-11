@@ -211,9 +211,9 @@ class PostDetailsPageState extends State<PostDetailsPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              if (post['PRECO'] == null || post['PRECO'] == 0)
+              if (post['PRECO'] != null)
                 Text(
-                  'Preço Médio: ${post['PRECO'] ?? 'Não existe preço'}€',
+                  'Preço Médio: ${post['PRECO']}€',
                   style: TextStyle(fontSize: 15, color: theme.disabledColor),
                 ),
             ],
@@ -311,11 +311,12 @@ class PostDetailsPageState extends State<PostDetailsPage> {
                       ),
                     ]),
                     SizedBox(height: 10),
-                    Text(
-                      'Data do Evento: ${post['DATAEVENTO'] ?? 'Não é possível mostrar a data'}',
-                      style:
-                          TextStyle(fontSize: 16, color: theme.disabledColor),
-                    ),
+                    if (post['PRECO'] != null)
+                      Text(
+                        'Preço Médio: ${post['PRECO']}€',
+                        style:
+                            TextStyle(fontSize: 15, color: theme.disabledColor),
+                      ),
                     SizedBox(height: 10),
                     post['IMAGEM'] != 'semimagem'
                         ? MyImageWidget(post: post)
